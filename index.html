@@ -21,7 +21,7 @@
       --text-main: #1C1917;
       --text-muted: #57534E;
       --primary: #065F46;
-      --secondary: #047857;
+      --primary-hover: color-mix(in srgb, var(--primary) 86%, black);
     }
 
     body {
@@ -64,14 +64,55 @@
       color: #F8FAFC;
     }
     .theme-primary-bg:hover {
-      background-color: var(--secondary);
+      background-color: var(--primary-hover);
     }
-    .theme-secondary-text {
-      color: var(--secondary);
+    .theme-primary-text {
+      color: var(--primary);
     }
-    .theme-secondary-badge {
-      background-color: color-mix(in srgb, var(--secondary) 16%, transparent);
-      color: var(--secondary);
+    .theme-primary-badge {
+      background-color: color-mix(in srgb, var(--primary) 16%, transparent);
+      color: var(--primary);
+    }
+
+    /* Checkboxes personalizadas modernas */
+    .custom-chk {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 1.2rem;
+      height: 1.2rem;
+      border-radius: 0.42rem;
+      border: 2px solid var(--border-color);
+      background-color: var(--bg-surface);
+      display: inline-grid;
+      place-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.16s ease;
+    }
+    .custom-chk:hover {
+      border-color: var(--primary);
+      transform: scale(1.04);
+    }
+    .custom-chk::before {
+      content: "";
+      width: 0.68rem;
+      height: 0.68rem;
+      transform: scale(0);
+      transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1);
+      background-color: #FFFFFF;
+      clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    }
+    .custom-chk:checked {
+      background-color: var(--primary);
+      border-color: var(--primary);
+      box-shadow: 0 2px 6px color-mix(in srgb, var(--primary) 35%, transparent);
+    }
+    .custom-chk:checked::before {
+      transform: scale(1);
+    }
+    .custom-chk:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
     }
   </style>
 </head>
@@ -94,53 +135,47 @@
         </div>
       </div>
 
-      <!-- Controles superiores: Tema, Colores, PIN QR, Contraseña y Salir -->
+      <!-- Controles superiores: Diseño (por perfil), PIN QR, Contraseña y Salir -->
       <div class="flex items-center gap-1.5 flex-wrap flex-shrink-0">
-        <!-- Toggle Claro / Oscuro -->
-        <button
-          type="button"
-          id="btn-toggle-mode"
-          onclick="toggleThemeMode()"
-          title="Cambiar modo Claro / Oscuro"
-          class="px-2.5 py-1.5 rounded-xl theme-muted-btn border text-xs font-bold transition hover:opacity-85"
-        >
-          🌙 Oscuro
-        </button>
-
-        <!-- Selector de Color Principal y Secundario -->
+        <!-- Botón Diseño (Modo Claro/Oscuro + Color Principal individual por perfil) -->
         <div class="relative">
           <button
             type="button"
-            onclick="togglePalettePopover()"
-            title="Personalizar color Principal y Secundario"
+            onclick="toggleDesignPopover()"
+            title="Personalizar diseño de tu perfil"
             class="px-2.5 py-1.5 rounded-xl theme-muted-btn border text-xs font-bold transition hover:opacity-85"
           >
-            🎨 Colores
+            🎨 Diseño
           </button>
 
-          <div id="palette-popover" class="hidden absolute right-0 mt-2 w-64 theme-surface border rounded-2xl p-3.5 shadow-xl z-40 space-y-3">
+          <div id="design-popover" class="hidden absolute right-0 mt-2 w-64 theme-surface border rounded-2xl p-3.5 shadow-xl z-40 space-y-3">
             <div class="flex items-center justify-between border-b theme-border pb-1.5">
-              <span class="font-display text-xs font-bold theme-text-main">Colores de Interfaz</span>
-              <button type="button" onclick="resetThemeColors()" class="text-[10px] font-bold theme-secondary-text underline">Restaurar</button>
+              <span class="font-display text-xs font-bold theme-text-main">Diseño de tu Perfil</span>
+              <button type="button" onclick="resetThemePreferences()" class="text-[10px] font-bold theme-primary-text underline">Restaurar</button>
             </div>
-            <div class="space-y-2 text-xs">
+
+            <!-- Selector Claro / Oscuro -->
+            <div class="grid grid-cols-2 gap-1.5 theme-muted-btn p-1 rounded-xl border">
+              <button type="button" id="btn-mode-light" onclick="setThemeMode('light')" class="py-1.5 rounded-lg text-xs font-bold theme-primary-bg transition">
+                ☀️ Claro
+              </button>
+              <button type="button" id="btn-mode-dark" onclick="setThemeMode('dark')" class="py-1.5 rounded-lg text-xs font-bold theme-text-muted transition">
+                🌙 Oscuro
+              </button>
+            </div>
+
+            <!-- Solo Color Principal -->
+            <div class="text-xs">
               <label class="flex items-center justify-between gap-2 cursor-pointer">
                 <div>
                   <p class="font-bold theme-text-main">Color Principal</p>
-                  <p class="text-[10px] theme-text-muted">Botones grandes y pestaña activa</p>
+                  <p class="text-[10px] theme-text-muted">Personalizado solo para tu cuenta</p>
                 </div>
-                <input id="color-primary-input" type="color" value="#065F46" oninput="updateCustomColor('primary', this.value)" class="w-8 h-8 rounded-lg cursor-pointer border-0 bg-transparent" />
-              </label>
-
-              <label class="flex items-center justify-between gap-2 cursor-pointer">
-                <div>
-                  <p class="font-bold theme-text-main">Color Secundario</p>
-                  <p class="text-[10px] theme-text-muted">Etiquetas, acentos y hover</p>
-                </div>
-                <input id="color-secondary-input" type="color" value="#047857" oninput="updateCustomColor('secondary', this.value)" class="w-8 h-8 rounded-lg cursor-pointer border-0 bg-transparent" />
+                <input id="color-primary-input" type="color" value="#065F46" oninput="updateCustomColor(this.value)" class="w-8 h-8 rounded-lg cursor-pointer border-0 bg-transparent" />
               </label>
             </div>
-            <p class="text-[10px] theme-text-muted leading-tight">No modifica el color de las barras de stock ni alertas críticas.</p>
+
+            <p class="text-[10px] theme-text-muted leading-tight">Tu diseño se guarda por perfil y no afecta las barras de stock ni alertas críticas.</p>
           </div>
         </div>
 
@@ -159,7 +194,7 @@
             </button>
             <div id="my-pin-popover" class="hidden absolute right-0 mt-2 w-56 theme-surface border rounded-2xl p-3.5 shadow-xl z-40 text-center space-y-1.5">
               <p class="text-[10px] font-bold uppercase tracking-wider theme-text-muted">Tu PIN para Pedidos QR</p>
-              <p id="my-pin-display" class="font-mono text-2xl font-extrabold tracking-widest theme-secondary-text py-1">
+              <p id="my-pin-display" class="font-mono text-2xl font-extrabold tracking-widest theme-primary-text py-1">
                 ----
               </p>
               <p class="text-[10px] theme-text-muted">Úsalo al escanear un pedido con tu celular.</p>
@@ -196,7 +231,7 @@
   <main id="view-login" class="flex-1 flex items-center justify-center px-4 py-8">
     <section class="w-full max-w-md theme-surface border rounded-2xl p-6 shadow-sm space-y-4">
       <div class="text-center space-y-1">
-        <span class="inline-block text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full theme-muted-btn theme-secondary-text border">
+        <span class="inline-block text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full theme-muted-btn theme-primary-text border">
           Acceso del Equipo
         </span>
         <h2 class="font-display text-lg font-extrabold theme-text-main pt-1">Stock Tacita de Café</h2>
@@ -224,7 +259,7 @@
   <main id="view-qr-checkout" class="hidden flex-1 flex items-center justify-center px-4 py-8">
     <section class="w-full max-w-md theme-surface border rounded-2xl p-6 shadow-sm space-y-4">
       <div class="text-center space-y-1">
-        <span class="inline-block text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full theme-muted-btn theme-secondary-text border">
+        <span class="inline-block text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full theme-muted-btn theme-primary-text border">
           Despacho por WhatsApp
         </span>
         <h2 id="qr-checkout-title" class="font-display text-lg font-extrabold theme-text-main pt-1">Confirmar Pedido</h2>
@@ -303,7 +338,7 @@
     <section id="tab-pedidos" class="hidden space-y-5">
       <div class="theme-surface border rounded-2xl p-4 sm:p-5 shadow-sm space-y-3.5">
         <div>
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-secondary-text">Reposición Rápida</span>
+          <span class="text-[10px] font-bold uppercase tracking-wider theme-primary-text">Reposición Rápida</span>
           <h2 class="font-display text-base font-bold theme-text-main">Armar Pedido por WhatsApp</h2>
           <p class="text-xs theme-text-muted">Elige un proveedor; se pre-cargan los insumos bajos en stock para enviar directo o escanear con el celular.</p>
         </div>
@@ -394,7 +429,7 @@
     <section id="tab-equipo" class="hidden space-y-4">
       <div class="theme-surface border rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
         <div>
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-secondary-text">Administración</span>
+          <span class="text-[10px] font-bold uppercase tracking-wider theme-primary-text">Administración</span>
           <h2 class="font-display text-base font-bold theme-text-main">Crear y Agregar Integrante al Local</h2>
           <p class="text-xs theme-text-muted">Crea la cuenta con correo, contraseña y un PIN de 4 dígitos para que pueda firmar pedidos por QR.</p>
         </div>
@@ -430,7 +465,7 @@
 
         <!-- Opción secundaria colapsable por si el usuario ya existía en Auth -->
         <details class="pt-1">
-          <summary class="text-[11px] font-bold theme-secondary-text cursor-pointer select-none">
+          <summary class="text-[11px] font-bold theme-primary-text cursor-pointer select-none">
             ¿El usuario ya tenía cuenta en Supabase? Vincular por User ID (UUID)
           </summary>
           <form onsubmit="linkExistingMemberByUuid(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end pt-2.5">
@@ -605,10 +640,10 @@
         <div class="space-y-1.5 pt-1">
           <div class="flex items-center justify-between">
             <label class="block text-xs font-bold theme-text-main">Productos asignados a este proveedor</label>
-            <span id="edit-prov-selected-count" class="text-[11px] font-bold theme-secondary-text">0 seleccionados</span>
+            <span id="edit-prov-selected-count" class="text-[11px] font-bold theme-primary-text">0 seleccionados</span>
           </div>
           <input id="edit-prov-prod-filter" type="search" oninput="renderEditProviderProductsList()" placeholder="Filtrar productos para marcar..." class="w-full px-3 py-1.5 theme-input border rounded-xl text-xs outline-none" />
-          <div id="edit-prov-products-list" class="max-h-44 overflow-y-auto theme-input border rounded-xl p-2 space-y-1"></div>
+          <div id="edit-prov-products-list" class="max-h-44 overflow-y-auto theme-input border rounded-xl p-2 space-y-1.5"></div>
         </div>
 
         <div class="flex items-center justify-between gap-2 pt-2 border-t theme-border">
@@ -649,7 +684,7 @@
           Anular Pedido
         </button>
         <div class="flex flex-wrap gap-2">
-          <button type="button" id="btn-save-order-wa" onclick="saveEditedOrder(true)" class="px-3 py-2 rounded-xl theme-muted-btn theme-secondary-text border text-xs font-bold">
+          <button type="button" id="btn-save-order-wa" onclick="saveEditedOrder(true)" class="px-3 py-2 rounded-xl theme-muted-btn theme-primary-text border text-xs font-bold">
             📲 Guardar y Reenviar WA
           </button>
           <button type="button" onclick="saveEditedOrder(false)" class="px-4 py-2 rounded-xl theme-primary-bg text-xs font-bold">
@@ -669,7 +704,7 @@
         <h3 class="font-display font-bold theme-text-main text-base">Escanear con Celular</h3>
         <button type="button" onclick="closeQrOrderModal()" class="w-8 h-8 rounded-lg theme-muted-btn font-bold text-lg flex items-center justify-center">&times;</button>
       </div>
-      <p id="qr-order-prov-label" class="text-xs font-bold theme-secondary-text"></p>
+      <p id="qr-order-prov-label" class="text-xs font-bold theme-primary-text"></p>
       <div class="bg-white p-4 rounded-2xl border border-stone-300 inline-flex items-center justify-center mx-auto">
         <div id="qr-code-canvas"></div>
       </div>
@@ -743,35 +778,36 @@
     let scannedQrOrder = null;
 
     // =========================================================================
-    // TEMA CLARO / OSCURO + COLORES PRINCIPAL Y SECUNDARIO
+    // DISEÑO PERSONALIZADO POR PERFIL (CLARO/OSCURO + COLOR PRINCIPAL)
     // =========================================================================
     const DEFAULT_THEME = {
-      mode: 'light', // 'light' | 'dark'
-      primary: '#065F46',
-      secondary: '#047857'
+      mode: 'light',
+      primary: '#065F46'
     };
 
-    function loadThemePreferences() {
-      let saved = DEFAULT_THEME;
-      try {
-        const raw = localStorage.getItem('tacita_stock_theme');
-        if (raw) saved = { ...DEFAULT_THEME, ...JSON.parse(raw) };
-      } catch (_) {}
-      applyTheme(saved);
-    }
-
-    function saveThemePreferences(prefs) {
-      localStorage.setItem('tacita_stock_theme', JSON.stringify(prefs));
-      applyTheme(prefs);
+    function getThemeStorageKey() {
+      // Guarda un diseño distinto por perfil de usuario
+      return currentMember?.id
+        ? `tacita_stock_design_profile_${currentMember.id}`
+        : 'tacita_stock_design_guest';
     }
 
     function getCurrentThemePrefs() {
       try {
-        const raw = localStorage.getItem('tacita_stock_theme');
+        const raw = localStorage.getItem(getThemeStorageKey());
         return raw ? { ...DEFAULT_THEME, ...JSON.parse(raw) } : { ...DEFAULT_THEME };
       } catch (_) {
         return { ...DEFAULT_THEME };
       }
+    }
+
+    function loadThemePreferences() {
+      applyTheme(getCurrentThemePrefs());
+    }
+
+    function saveThemePreferences(prefs) {
+      localStorage.setItem(getThemeStorageKey(), JSON.stringify(prefs));
+      applyTheme(prefs);
     }
 
     function applyTheme(prefs) {
@@ -797,19 +833,22 @@
       }
 
       root.style.setProperty('--primary', prefs.primary);
-      root.style.setProperty('--secondary', prefs.secondary);
 
-      const modeBtn = document.getElementById('btn-toggle-mode');
-      if (modeBtn) {
-        modeBtn.textContent = isDark ? '☀️ Claro' : '🌙 Oscuro';
+      const btnLight = document.getElementById('btn-mode-light');
+      const btnDark = document.getElementById('btn-mode-dark');
+      if (btnLight && btnDark) {
+        btnLight.className = !isDark
+          ? 'py-1.5 rounded-lg text-xs font-bold theme-primary-bg transition'
+          : 'py-1.5 rounded-lg text-xs font-bold theme-text-muted transition';
+        btnDark.className = isDark
+          ? 'py-1.5 rounded-lg text-xs font-bold theme-primary-bg transition'
+          : 'py-1.5 rounded-lg text-xs font-bold theme-text-muted transition';
       }
 
       const pInput = document.getElementById('color-primary-input');
-      const sInput = document.getElementById('color-secondary-input');
       if (pInput) pInput.value = prefs.primary;
-      if (sInput) sInput.value = prefs.secondary;
 
-      // Actualizar favicon dinámicamente con el color principal
+      // Actualizar favicon dinámicamente con el color principal del perfil
       const fav = document.getElementById('dynamic-favicon');
       if (fav) {
         const encodedColor = encodeURIComponent(prefs.primary);
@@ -817,33 +856,30 @@
       }
     }
 
-    function toggleThemeMode() {
+    function setThemeMode(mode) {
       const prefs = getCurrentThemePrefs();
-      prefs.mode = prefs.mode === 'dark' ? 'light' : 'dark';
+      prefs.mode = mode;
       saveThemePreferences(prefs);
     }
 
-    function updateCustomColor(which, hex) {
+    function updateCustomColor(hex) {
       const prefs = getCurrentThemePrefs();
-      prefs[which] = hex;
+      prefs.primary = hex;
       saveThemePreferences(prefs);
     }
 
-    function resetThemeColors() {
-      const prefs = getCurrentThemePrefs();
-      prefs.primary = DEFAULT_THEME.primary;
-      prefs.secondary = DEFAULT_THEME.secondary;
-      saveThemePreferences(prefs);
-      showToast('Colores restaurados');
+    function resetThemePreferences() {
+      saveThemePreferences({ ...DEFAULT_THEME });
+      showToast('Diseño de tu perfil restaurado');
     }
 
-    function togglePalettePopover() {
+    function toggleDesignPopover() {
       document.getElementById('my-pin-popover')?.classList.add('hidden');
-      document.getElementById('palette-popover').classList.toggle('hidden');
+      document.getElementById('design-popover').classList.toggle('hidden');
     }
 
     function toggleMyPinPopover() {
-      document.getElementById('palette-popover')?.classList.add('hidden');
+      document.getElementById('design-popover')?.classList.add('hidden');
       const pop = document.getElementById('my-pin-popover');
       const display = document.getElementById('my-pin-display');
       if (display && currentMember) {
@@ -921,6 +957,7 @@
       await db.auth.signOut();
       currentMember = null;
       currentLocal = null;
+      loadThemePreferences(); // Vuelve al diseño de invitado al cerrar sesión
       document.getElementById('view-app').classList.add('hidden');
       document.getElementById('header-actions').classList.add('hidden');
       document.getElementById('view-login').classList.remove('hidden');
@@ -989,6 +1026,9 @@
 
       currentMember = member;
       currentLocal = member.locales;
+
+      // Cargar el diseño guardado específicamente para este perfil
+      loadThemePreferences();
 
       document.getElementById('header-local-name').textContent = currentLocal ? currentLocal.nombre : 'Stock Tacita de Café';
       document.getElementById('view-login').classList.add('hidden');
@@ -1416,7 +1456,7 @@
               ${hasWa ? 'WhatsApp: +' + pr.telefono_whatsapp : 'Sin WhatsApp registrado'}
               ${pr.categoria ? ' • ' + pr.categoria : ''}
             </p>
-            <p class="text-[11px] font-semibold theme-secondary-text mt-0.5">${assignedCount} producto(s) asignado(s)</p>
+            <p class="text-[11px] font-semibold theme-primary-text mt-0.5">${assignedCount} producto(s) asignado(s)</p>
           </div>
           <div class="flex items-center gap-1.5 flex-shrink-0">
             ${adminActive ? `
@@ -1425,7 +1465,7 @@
               </button>
             ` : ''}
             ${hasWa ? `
-              <a href="https://wa.me/${pr.telefono_whatsapp}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-xl theme-muted-btn hover:opacity-80 theme-secondary-text border text-xs font-bold">Chat</a>
+              <a href="https://wa.me/${pr.telefono_whatsapp}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-xl theme-muted-btn hover:opacity-80 theme-primary-text border text-xs font-bold">Chat</a>
             ` : ''}
           </div>
         `;
@@ -1477,10 +1517,10 @@
           : null;
 
         const label = document.createElement('label');
-        label.className = 'flex items-center justify-between gap-2 p-2 rounded-lg hover:opacity-85 cursor-pointer text-xs';
+        label.className = 'flex items-center justify-between gap-2.5 p-2 rounded-xl theme-surface/50 hover:opacity-90 cursor-pointer text-xs border border-transparent hover:theme-border transition';
         label.innerHTML = `
-          <span class="flex items-center gap-2 min-w-0">
-            <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleProviderProductSelection('${p.id}', this.checked)" class="w-4 h-4 accent-emerald-600" />
+          <span class="flex items-center gap-2.5 min-w-0">
+            <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleProviderProductSelection('${p.id}', this.checked)" class="custom-chk" />
             <span class="font-semibold theme-text-main truncate">${p.nombre}</span>
           </span>
           <span class="text-[10px] theme-text-muted flex-shrink-0">
@@ -1607,8 +1647,8 @@
         const row = document.createElement('div');
         row.className = 'p-3 rounded-xl theme-input border flex items-center justify-between gap-3';
         row.innerHTML = `
-          <label class="flex items-center gap-2.5 min-w-0 cursor-pointer">
-            <input type="checkbox" class="order-chk w-4 h-4 accent-emerald-600" data-id="${p.id}" ${isCrit ? 'checked' : ''} onchange="updateOrderSummary()" />
+          <label class="flex items-center gap-3 min-w-0 cursor-pointer select-none">
+            <input type="checkbox" class="order-chk custom-chk" data-id="${p.id}" ${isCrit ? 'checked' : ''} onchange="updateOrderSummary()" />
             <div class="min-w-0">
               <p class="text-xs font-bold theme-text-main truncate">${p.nombre} ${isCrit ? '🔴' : ''}</p>
               <p class="text-[11px] theme-text-muted">Actual: ${p.stock_actual} / Ideal: ${p.stock_maximo} ${p.unidad}</p>
@@ -2189,7 +2229,7 @@
           <div class="min-w-0">
             <div class="flex items-center gap-2">
               <p class="font-display font-bold text-xs theme-text-main truncate">${m.nombre_mostrar}</p>
-              ${isSelf ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full theme-secondary-badge">Tú</span>' : ''}
+              ${isSelf ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full theme-primary-badge">Tú</span>' : ''}
               <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${m.activo ? 'bg-emerald-700/20 text-emerald-600' : 'bg-stone-500/20 theme-text-muted'}">
                 ${m.activo ? 'Activo' : 'Inactivo'}
               </span>
@@ -2374,10 +2414,10 @@
 
     // Cerrar popovers al hacer clic fuera
     document.addEventListener('click', (e) => {
-      const palettePop = document.getElementById('palette-popover');
+      const designPop = document.getElementById('design-popover');
       const pinPop = document.getElementById('my-pin-popover');
-      if (palettePop && !palettePop.contains(e.target) && !e.target.closest('[onclick="togglePalettePopover()"]')) {
-        palettePop.classList.add('hidden');
+      if (designPop && !designPop.contains(e.target) && !e.target.closest('[onclick="toggleDesignPopover()"]')) {
+        designPop.classList.add('hidden');
       }
       if (pinPop && !pinPop.contains(e.target) && !e.target.closest('#btn-toggle-pin')) {
         pinPop.classList.add('hidden');
