@@ -1400,46 +1400,52 @@
     }
 
     async function submitQrOrderAuth(e) {
-      e.preventDefault();
-      if (!scannedQrOrder || !scannedQrProvider) return;
+  e.preventDefault();
+  const errEl = document.getElementById('qr-checkout-error');
+  const btn = document.getElementById('btn-qr-confirm');
+  errEl.classList.add('hidden');
 
-      const nombre = document.getElementById('qr-user-name').value.trim();
-      const pin = document.getElementById('qr-user-pin').value.trim();
-      const errEl = document.getElementById('qr-checkout-error');
-      const btn = document.getElementById('btn-qr-confirm');
+  if (!scannedQrOrder) {
+    errEl.textContent = 'No se cargó el pedido. Recarga la página e intenta de nuevo.';
+    errEl.classList.remove('hidden');
+    return;
+  }
 
-      errEl.classList.add('hidden');
-      btn.disabled = true;
-      btn.textContent = 'Verificando...';
+  const nombre = document.getElementById('qr-user-name').value.trim();
+  const pin = document.getElementById('qr-user-pin').value.trim();
 
-      const { data: nombreOficial, error } = await db.rpc('firmar_pedido_qr', {
-        p_pedido_id: scannedQrOrder.id,
-        p_nombre: nombre,
-        p_pin: pin
-      });
+  btn.disabled = true;
+  btn.textContent = 'Verificando...';
 
-      btn.disabled = false;
-      btn.textContent = 'Confirmar y Abrir WhatsApp →';
+  const { data: nombreOficial, error } = await db.rpc('firmar_pedido_qr', {
+    p_pedido_id: scannedQrOrder.id,
+    p_nombre: nombre,
+    p_pin: pin
+  });
 
-      if (error || !nombreOficial) {
-        errEl.textContent = error?.message || 'Nombre o PIN incorrectos.';
-        errEl.classList.remove('hidden');
-        return;
-      }
+  btn.disabled = false;
+  btn.textContent = 'Confirmar y Abrir WhatsApp →';
 
-      const waUrl = buildWhatsAppOrderUrl(
-        scannedQrProvider,
-        scannedQrOrder.items || [],
-        scannedQrLocal?.nombre
-      );
+  if (error || !nombreOficial) {
+    errEl.textContent = error?.message || 'Nombre o PIN incorrectos.';
+    errEl.classList.remove('hidden');
+    return;
+  }
 
-      if (waUrl) {
-        window.location.href = waUrl;
-      } else {
-        document.getElementById('qr-checkout-subtitle').textContent = `✓ Pedido registrado a nombre de ${nombreOficial}. (Este proveedor no tiene WhatsApp guardado).`;
-        btn.disabled = true;
-      }
-    }
+  const waUrl = buildWhatsAppOrderUrl(
+    scannedQrProvider,
+    scannedQrOrder.items || [],
+    scannedQrLocal?.nombre
+  );
+
+  if (waUrl) {
+    window.location.href = waUrl;
+  } else {
+    document.getElementById('qr-checkout-subtitle').textContent =
+      `✓ Pedido registrado a nombre de ${nombreOficial}. (Este proveedor no tiene teléfono WhatsApp configurado).`;
+    btn.disabled = true;
+  }
+}
 
     // Historial de pedidos, edición y eliminación
     function renderOrdersHistory() {
