@@ -1417,7 +1417,7 @@
   btn.disabled = true;
   btn.textContent = 'Verificando...';
 
-  const { data: nombreOficial, error } = await db.rpc('firmar_pedido_qr', {
+  const { data: res, error } = await db.rpc('firmar_pedido_qr', {
     p_pedido_id: scannedQrOrder.id,
     p_nombre: nombre,
     p_pin: pin
@@ -1426,23 +1426,24 @@
   btn.disabled = false;
   btn.textContent = 'Confirmar y Abrir WhatsApp →';
 
-  if (error || !nombreOficial) {
+  if (error || !res) {
     errEl.textContent = error?.message || 'Nombre o PIN incorrectos.';
     errEl.classList.remove('hidden');
     return;
   }
 
-  const waUrl = buildWhatsAppOrderUrl(
-    scannedQrProvider,
-    scannedQrOrder.items || [],
-    scannedQrLocal?.nombre
-  );
-
-  if (waUrl) {
-    window.location.href = waUrl;
+  const cleanPhone = String(res.telefono_whatsapp || '').replace(/\D/g, '');
+  if (cleanPhone) {
+    const lines = (scannedQrOrder.items || [])
+      .map(i => `• ${i.cantidad} ${i.unidad}(s) de ${i.nombre}`)
+      .join('\n');
+    const msg = encodeURIComponent(
+      `Hola ${res.proveedor_nombre}, te escribimos de ${res.local_nombre} para hacer el siguiente pedido:\n\n${lines}\n\n¡Muchas gracias!`
+    );
+    window.location.href = `https://wa.me/${cleanPhone}?text=${msg}`;
   } else {
     document.getElementById('qr-checkout-subtitle').textContent =
-      `✓ Pedido registrado a nombre de ${nombreOficial}. (Este proveedor no tiene teléfono WhatsApp configurado).`;
+      `✓ Pedido registrado por ${res.nombre_oficial}. (El proveedor "${res.proveedor_nombre}" no tiene número WhatsApp guardado).`;
     btn.disabled = true;
   }
 }
