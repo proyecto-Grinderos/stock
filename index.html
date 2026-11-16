@@ -1,0 +1,1934 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock y Proveedores • Taller Digital</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #D6D1C4;
+      color: #1C1917;
+    }
+    h1, h2, h3, h4, .font-display {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-[#D6D1C4] text-stone-900 min-h-screen flex flex-col antialiased selection:bg-[#065F46] selection:text-[#E6E2D6]">
+
+  <!-- CABECERA -->
+  <header class="w-full bg-[#E6E2D6] border-b border-[#B5AE9E] px-4 sm:px-6 py-3.5 sticky top-0 z-30">
+    <div class="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-9 h-9 rounded-xl bg-[#065F46] text-[#E6E2D6] flex items-center justify-center shadow-sm flex-shrink-0 font-bold text-base">
+          📦
+        </div>
+        <div class="min-w-0">
+          <h1 id="header-local-name" class="font-display text-base sm:text-lg font-extrabold text-stone-900 truncate leading-tight">
+            Stock & Proveedores
+          </h1>
+          <p id="header-user-info" class="text-[11px] text-stone-600 truncate">
+            Control de bodega en turno
+          </p>
+        </div>
+      </div>
+
+      <div id="header-actions" class="hidden flex items-center gap-2 flex-wrap flex-shrink-0">
+        <span id="badge-critical-count" class="hidden text-[11px] font-bold px-2.5 py-1 rounded-full bg-red-800/15 text-red-900 border border-red-900/25">
+          0 críticos
+        </span>
+        <button
+          type="button"
+          onclick="handleLogout()"
+          class="px-3 py-1.5 rounded-xl bg-[#D6D1C4] hover:bg-red-800/15 text-stone-800 hover:text-red-900 border border-[#B5AE9E] text-xs font-bold transition"
+        >
+          Salir
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- PANTALLA DE LOGIN -->
+  <main id="view-login" class="flex-1 flex items-center justify-center px-4 py-8">
+    <section class="w-full max-w-md bg-[#E6E2D6] border border-[#B5AE9E] rounded-2xl p-6 shadow-sm space-y-4">
+      <div class="text-center space-y-1">
+        <span class="inline-block text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-[#D6D1C4] text-[#065F46] border border-[#B5AE9E]">
+          Acceso del Equipo
+        </span>
+        <h2 class="font-display text-lg font-extrabold text-stone-900 pt-1">Control de Stock</h2>
+        <p class="text-xs text-stone-600">Inicia sesión una vez en tu celular; tu cuenta quedará guardada para los próximos turnos.</p>
+      </div>
+
+      <form onsubmit="handleLogin(event)" class="space-y-3">
+        <div>
+          <label for="login-email" class="block text-xs font-bold text-stone-800 mb-1">Correo</label>
+          <input id="login-email" type="email" required placeholder="tu.correo@ejemplo.cl" class="w-full px-3.5 py-2.5 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-sm text-stone-900 outline-none focus:border-[#065F46]" />
+        </div>
+        <div>
+          <label for="login-password" class="block text-xs font-bold text-stone-800 mb-1">Contraseña</label>
+          <input id="login-password" type="password" required placeholder="••••••••" class="w-full px-3.5 py-2.5 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-sm text-stone-900 outline-none focus:border-[#065F46]" />
+        </div>
+        <p id="login-error" class="hidden text-xs font-bold text-red-900 bg-red-800/15 border border-red-900/30 p-2.5 rounded-xl"></p>
+        <button id="btn-login" type="submit" class="w-full py-3 bg-[#065F46] hover:bg-[#047857] text-[#E6E2D6] font-display font-bold rounded-xl text-sm shadow-sm transition">
+          Entrar a Bodega →
+        </button>
+      </form>
+    </section>
+  </main>
+
+  <!-- VISTA CELULAR AL ESCANEAR QR (?orden_qr=ID) -->
+  <main id="view-qr-checkout" class="hidden flex-1 flex items-center justify-center px-4 py-8">
+    <section class="w-full max-w-md bg-[#E6E2D6] border border-[#B5AE9E] rounded-2xl p-6 shadow-sm space-y-4">
+      <div class="text-center space-y-1">
+        <span class="inline-block text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-[#D6D1C4] text-[#065F46] border border-[#B5AE9E]">
+          Despacho por WhatsApp
+        </span>
+        <h2 id="qr-checkout-title" class="font-display text-lg font-extrabold text-stone-900 pt-1">Confirmar Pedido</h2>
+        <p id="qr-checkout-subtitle" class="text-xs text-stone-600">Cargando detalle del pedido...</p>
+      </div>
+
+      <div id="qr-checkout-items" class="p-3 rounded-xl bg-[#F3EFE4] border border-[#B5AE9E] space-y-1.5 text-xs text-stone-800"></div>
+
+      <form onsubmit="submitQrOrderAuth(event)" class="space-y-3">
+        <div>
+          <label for="qr-user-name" class="block text-xs font-bold text-stone-800 mb-1">Tu Nombre *</label>
+          <input id="qr-user-name" type="text" required placeholder="Ej. Benjamín" class="w-full px-3.5 py-2.5 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-sm text-stone-900 outline-none focus:border-[#065F46]" />
+        </div>
+        <div>
+          <label for="qr-user-pin" class="block text-xs font-bold text-stone-800 mb-1">Tu PIN de Pedido *</label>
+          <input id="qr-user-pin" type="password" inputmode="numeric" required placeholder="••••" class="w-full px-3.5 py-2.5 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-sm text-stone-900 outline-none focus:border-[#065F46]" />
+        </div>
+        <p id="qr-checkout-error" class="hidden text-xs font-bold text-red-900 bg-red-800/15 border border-red-900/30 p-2.5 rounded-xl"></p>
+        <button id="btn-qr-confirm" type="submit" class="w-full py-3 bg-[#065F46] hover:bg-[#047857] text-[#E6E2D6] font-display font-bold rounded-xl text-sm shadow-sm transition">
+          Confirmar y Abrir WhatsApp →
+        </button>
+      </form>
+    </section>
+  </main>
+
+  <!-- APP PRINCIPAL (AUTENTICADO) -->
+  <main id="view-app" class="hidden flex-1 w-full max-w-4xl mx-auto px-4 py-5 space-y-5">
+
+    <!-- Navegación por Pestañas -->
+    <nav id="main-tabs-nav" aria-label="Secciones" class="grid grid-cols-4 gap-1.5 bg-[#E6E2D6] p-1.5 rounded-2xl border border-[#B5AE9E]">
+      <button type="button" id="tab-btn-stock" onclick="switchTab('stock')" class="py-2.5 px-2 rounded-xl text-xs font-bold bg-[#065F46] text-[#E6E2D6] transition">
+        📦 Stock
+      </button>
+      <button type="button" id="tab-btn-pedidos" onclick="switchTab('pedidos')" class="py-2.5 px-2 rounded-xl text-xs font-bold text-stone-700 hover:bg-[#D6D1C4] transition">
+        📲 Pedidos
+      </button>
+      <button type="button" id="tab-btn-proveedores" onclick="switchTab('proveedores')" class="py-2.5 px-2 rounded-xl text-xs font-bold text-stone-700 hover:bg-[#D6D1C4] transition">
+        🚚 Proveedores
+      </button>
+      <button type="button" id="tab-btn-bitacora" onclick="switchTab('bitacora')" class="py-2.5 px-2 rounded-xl text-xs font-bold text-stone-700 hover:bg-[#D6D1C4] transition">
+        📋 Bitácora
+      </button>
+      <button type="button" id="tab-btn-equipo" onclick="switchTab('equipo')" class="hidden py-2.5 px-2 rounded-xl text-xs font-bold text-stone-700 hover:bg-[#D6D1C4] transition">
+        👥 Equipo
+      </button>
+    </nav>
+
+    <!-- =================================================================== -->
+    <!-- PESTAÑA 1: INVENTARIO (USO RÁPIDO -1 / +1 + EDICIÓN ADMIN)          -->
+    <!-- =================================================================== -->
+    <section id="tab-stock" class="space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex-1 min-w-[200px]">
+          <input id="stock-search" type="search" oninput="renderProducts()" placeholder="Buscar insumo (ej. leche, café)..." class="w-full px-3.5 py-2.5 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-xs font-medium text-stone-900 outline-none focus:border-[#065F46]" />
+        </div>
+        <button type="button" id="btn-filter-critical" onclick="toggleCriticalFilter()" class="px-3.5 py-2.5 rounded-xl bg-[#E6E2D6] hover:bg-[#DDD8CA] text-stone-800 border border-[#B5AE9E] text-xs font-bold transition">
+          🔴 Solo críticos
+        </button>
+        <button type="button" id="btn-new-product" onclick="openProductModal()" class="px-3.5 py-2.5 rounded-xl bg-[#065F46] hover:bg-[#047857] text-[#E6E2D6] text-xs font-bold transition shadow-xs">
+          + Nuevo Producto
+        </button>
+      </div>
+
+      <div id="products-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- PESTAÑA 2: PEDIDOS POR WHATSAPP + QR CELULAR + EDICIÓN + ELIMINAR   -->
+    <!-- =================================================================== -->
+    <section id="tab-pedidos" class="hidden space-y-5">
+      <!-- Armar Pedido por Proveedor -->
+      <div class="bg-[#E6E2D6] border border-[#B5AE9E] rounded-2xl p-4 sm:p-5 shadow-sm space-y-3.5">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-[#065F46]">Reposición Rápida</span>
+          <h2 class="font-display text-base font-bold text-stone-900">Armar Pedido por WhatsApp</h2>
+          <p class="text-xs text-stone-600">Elige un proveedor; se pre-cargan los insumos bajos en stock para enviar directo o escanear con el celular.</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <select id="order-provider-select" onchange="renderOrderBuilder()" class="flex-1 min-w-[200px] px-3.5 py-2.5 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-xs font-bold text-stone-900 outline-none focus:border-[#065F46]"></select>
+        </div>
+
+        <div id="order-builder-items" class="space-y-2"></div>
+
+        <div class="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-[#B5AE9E]/60">
+          <p id="order-builder-summary" class="text-xs font-semibold text-stone-700">0 productos seleccionados</p>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" onclick="createOrderQRForMobile()" class="px-3.5 py-2.5 rounded-xl bg-[#D6D1C4] hover:bg-[#C8C2B3] text-stone-900 border border-[#B5AE9E] text-xs font-bold transition">
+              📱 QR para pedir en Celular
+            </button>
+            <button type="button" onclick="createOrderAndOpenWhatsApp()" class="px-4 py-2.5 rounded-xl bg-[#065F46] hover:bg-[#047857] text-[#E6E2D6] text-xs font-bold transition shadow-xs">
+              📲 Guardar y Pedir aquí
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pedidos Pendientes e Historial -->
+      <div class="bg-[#E6E2D6] border border-[#B5AE9E] rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <h3 class="font-display text-base font-bold text-stone-900">Pedidos Realizados</h3>
+          <button type="button" id="btn-clear-orders" onclick="clearAllOrders()" class="hidden px-3 py-1.5 rounded-xl bg-red-800/15 hover:bg-red-800/25 text-red-900 border border-red-900/30 text-xs font-bold transition">
+            🗑️ Vaciar pedidos
+          </button>
+        </div>
+        <div id="orders-history-list" class="space-y-2.5"></div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- PESTAÑA 3: PROVEEDORES (ALTA + EDICIÓN + ASIGNACIÓN MÚLTIPLE)       -->
+    <!-- =================================================================== -->
+    <section id="tab-proveedores" class="hidden space-y-4">
+      <div id="admin-add-provider-box" class="bg-[#E6E2D6] border border-[#B5AE9E] rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+        <h2 class="font-display text-base font-bold text-stone-900">Agregar Proveedor</h2>
+        <form onsubmit="addProvider(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+          <div class="sm:col-span-4">
+            <label for="prov-name" class="block text-[11px] font-bold text-stone-800 mb-1">Nombre *</label>
+            <input id="prov-name" type="text" required placeholder="Ej. Tostaduría Sur" class="w-full px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-xs text-stone-900 outline-none focus:border-[#065F46]" />
+          </div>
+          <div class="sm:col-span-4">
+            <label for="prov-wa" class="block text-[11px] font-bold text-stone-800 mb-1">WhatsApp (opcional)</label>
+            <input id="prov-wa" type="tel" placeholder="Ej. 56912345678" class="w-full px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-xs text-stone-900 outline-none focus:border-[#065F46]" />
+          </div>
+          <div class="sm:col-span-3">
+            <label for="prov-cat" class="block text-[11px] font-bold text-stone-800 mb-1">Rubro</label>
+            <input id="prov-cat" type="text" placeholder="Ej. Lácteos / Café" class="w-full px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-xs text-stone-900 outline-none focus:border-[#065F46]" />
+          </div>
+          <div class="sm:col-span-1">
+            <button type="submit" class="w-full py-2 px-3 rounded-xl bg-[#065F46] hover:bg-[#047857] text-[#E6E2D6] text-xs font-bold transition">+</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="providers-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- PESTAÑA 4: BITÁCORA DE MOVIMIENTOS                                  -->
+    <!-- =================================================================== -->
+    <section id="tab-bitacora" class="hidden bg-[#E6E2D6] border border-[#B5AE9E] rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 class="font-display text-base font-bold text-stone-900">Últimos Movimientos</h2>
+          <p class="text-xs text-stone-600">Registro automático de quién restó, ajustó o recibió mercadería.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" id="btn-clear-audit" onclick="clearAllAuditLogs()" class="hidden px-3 py-1.5 rounded-xl bg-red-800/15 hover:bg-red-800/25 text-red-900 border border-red-900/30 text-xs font-bold transition">
+            🗑️ Limpiar historial
+          </button>
+          <button type="button" onclick="loadAllData()" class="px-3 py-1.5 rounded-xl bg-[#D6D1C4] hover:bg-[#C8C2B3] text-stone-800 border border-[#B5AE9E] text-xs font-bold transition">
+            ↻ Actualizar
+          </button>
+        </div>
+      </div>
+      <div id="audit-log-list" class="space-y-2"></div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- PESTAÑA 5: GESTIÓN DE EQUIPO (EXCLUSIVO ADMIN)                      -->
+    <!-- =================================================================== -->
+    <section id="tab-equipo" class="hidden space-y-4">
+      <div class="bg-[#E6E2D6] border border-[#B5AE9E] rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-[#065F46]">Administración</span>
+          <h2 class="font-display text-base font-bold text-stone-900">Vincular Nuevo Integrante al Local</h2>
+          <p class="text-xs text-stone-600">Ingresa el User ID (UUID de Supabase Auth), su nombre y su PIN personal para firmar pedidos por QR.</p>
+        </div>
+        <form onsubmit="addTeamMember(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+          <div class="sm:col-span-4">
+            <label for="team-user-id" class="block text-[11px] font-bold text-stone-800 mb-1">User ID (UUID) *</label>
+            <input id="team-user-id" type="text" required placeholder="xxxxxxxx-xxxx-..." class="w-full px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-xs font-mono text-stone-900 outline-none focus:border-[#065F46]" />
+          </div>
+          <div class="sm:col-span-3">
+            <label for="team-name" class="block text-[11px] font-bold text-stone-800 mb-1">Nombre *</label>
+            <input id="team-name" type="text" required placeholder="Ej. Camila" class="w-full px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-xs text-stone-900 outline-none focus:border-[#065F46]" />
+          </div>
+          <div class="sm:col-span-2">
+            <label for="team-pin" class="block text-[11px] font-bold text-stone-800 mb-1">PIN Pedido *</label>
+            <input id="team-pin" type="text" maxlength="8" required placeholder="1234" class="w-full px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-xs font-mono text-stone-900 outline-none focus:border-[#065F46]" />
+          </div>
+          <div class="sm:col-span-2">
+            <label for="team-role" class="block text-[11px] font-bold text-stone-800 mb-1">Rol</label>
+            <select id="team-role" class="w-full px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-xs font-bold text-stone-900 outline-none focus:border-[#065F46]">
+              <option value="empleado">Empleado</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div class="sm:col-span-1">
+            <button type="submit" class="w-full py-2 px-3 rounded-xl bg-[#065F46] hover:bg-[#047857] text-[#E6E2D6] text-xs font-bold transition">+</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="bg-[#E6E2D6] border border-[#B5AE9E] rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-display text-base font-bold text-stone-900">Equipo del Local</h3>
+          <button type="button" onclick="loadTeamMembers()" class="px-3 py-1.5 rounded-xl bg-[#D6D1C4] hover:bg-[#C8C2B3] text-stone-800 border border-[#B5AE9E] text-xs font-bold transition">
+            ↻ Actualizar
+          </button>
+        </div>
+        <div id="team-members-list" class="space-y-2.5"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 1: NUEVO PRODUCTO (INDIVIDUAL O LOTE SEPARADO POR COMAS)        -->
+  <!-- ===================================================================== -->
+  <div id="product-modal" class="fixed inset-0 bg-stone-950/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-[#E6E2D6] rounded-2xl max-w-md w-full p-5 shadow-2xl border border-[#B5AE9E] space-y-4">
+      <div class="flex items-center justify-between pb-2 border-b border-[#B5AE9E]">
+        <h3 class="font-display font-bold text-stone-900 text-base">Agregar Productos a Bodega</h3>
+        <button type="button" onclick="closeProductModal()" class="w-8 h-8 rounded-lg bg-[#D6D1C4] hover:bg-[#C8C2B3] text-stone-900 font-bold text-lg flex items-center justify-center">&times;</button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-1.5 bg-[#D6D1C4] p-1 rounded-xl border border-[#B5AE9E]">
+        <button type="button" id="btn-prod-mode-single" onclick="setProductCreateMode('single')" class="py-1.5 rounded-lg text-xs font-bold bg-[#065F46] text-[#E6E2D6] transition">
+          1 Producto
+        </button>
+        <button type="button" id="btn-prod-mode-bulk" onclick="setProductCreateMode('bulk')" class="py-1.5 rounded-lg text-xs font-bold text-stone-700 hover:text-stone-900 transition">
+          Varios (separados por ,)
+        </button>
+      </div>
+
+      <form onsubmit="saveNewProduct(event)" class="space-y-3">
+        <div id="prod-single-wrapper">
+          <label for="prod-name" class="block text-xs font-bold text-stone-800 mb-1">Nombre *</label>
+          <input id="prod-name" type="text" placeholder="Ej. Leche Entera 1L" class="w-full px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-sm outline-none focus:border-[#065F46]" />
+        </div>
+
+        <div id="prod-bulk-wrapper" class="hidden space-y-1">
+          <label for="prod-bulk-names" class="block text-xs font-bold text-stone-800">Nombres separados por coma (,) *</label>
+          <textarea id="prod-bulk-names" rows="3" placeholder="Ej. Leche Entera 1L, Leche Sin Lactosa 1L, Leche Avena 1L" class="w-full px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-sm outline-none focus:border-[#065F46]"></textarea>
+          <p class="text-[11px] text-stone-600">Escribe los nombres separados por coma; todos compartirán unidad, proveedor y umbrales base.</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label for="prod-unit" class="block text-xs font-bold text-stone-800 mb-1">Unidad *</label>
+            <input id="prod-unit" type="text" required placeholder="caja / bolsa / botella" value="unidad" class="w-full px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-sm outline-none focus:border-[#065F46]" />
+          </div>
+          <div>
+            <label for="prod-provider" class="block text-xs font-bold text-stone-800 mb-1">Proveedor</label>
+            <select id="prod-provider" class="w-full px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-sm outline-none focus:border-[#065F46]"></select>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-2.5">
+          <div>
+            <label for="prod-actual" class="block text-xs font-bold text-stone-800 mb-1">Stock inicial *</label>
+            <input id="prod-actual" type="number" min="0" required value="6" class="w-full px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-sm outline-none focus:border-[#065F46]" />
+          </div>
+          <div>
+            <label for="prod-min" class="block text-xs font-bold text-stone-800 mb-1">Mínimo alerta *</label>
+            <input id="prod-min" type="number" min="0" required value="2" class="w-full px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-sm outline-none focus:border-[#065F46]" />
+          </div>
+          <div>
+            <label for="prod-max" class="block text-xs font-bold text-stone-800 mb-1">Stock ideal *</label>
+            <input id="prod-max" type="number" min="1" required value="12" class="w-full px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-sm outline-none focus:border-[#065F46]" />
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeProductModal()" class="px-4 py-2 rounded-xl bg-[#D6D1C4] text-xs font-semibold border border-[#B5AE9E]">Cancelar</button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-[#065F46] hover:bg-[#047857] text-[#E6E2D6] text-xs font-bold">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 2: EDITAR PRODUCTO Y STOCK EXISTENTE                            -->
+  <!-- ===================================================================== -->
+  <div id="edit-product-modal" class="fixed inset-0 bg-stone-950/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-[#E6E2D6] rounded-2xl max-w-md w-full p-5 shadow-2xl border border-[#B5AE9E] space-y-4">
+      <div class="flex items-center justify-between pb-2 border-b border-[#B5AE9E]">
+        <h3 class="font-display font-bold text-stone-900 text-base">Editar Producto / Stock</h3>
+        <button type="button" onclick="closeEditProductModal()" class="w-8 h-8 rounded-lg bg-[#D6D1C4] hover:bg-[#C8C2B3] text-stone-900 font-bold text-lg flex items-center justify-center">&times;</button>
+      </div>
+      <form onsubmit="saveEditedProduct(event)" class="space-y-3">
+        <input type="hidden" id="edit-prod-id" />
+        <div>
+          <label for="edit-prod-name" class="block text-xs font-bold text-stone-800 mb-1">Nombre *</label>
+          <input id="edit-prod-name" type="text" required class="w-full px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-sm outline-none focus:border-[#065F46]" />
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label for="edit-prod-unit" class="block text-xs font-bold text-stone-800 mb-1">Unidad *</label>
+            <input id="edit-prod-unit" type="text" required class="w-full px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-sm outline-none focus:border-[#065F46]" />
+          </div>
+          <div>
+            <label for="edit-prod-provider" class="block text-xs font-bold text-stone-800 mb-1">Proveedor</label>
+            <select id="edit-prod-provider" class="w-full px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-sm outline-none focus:border-[#065F46]"></select>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-2.5">
+          <div>
+            <label for="edit-prod-actual" class="block text-xs font-bold text-stone-800 mb-1">Stock actual *</label>
+            <input id="edit-prod-actual" type="number" min="0" required class="w-full px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-sm font-bold outline-none focus:border-[#065F46]" />
+          </div>
+          <div>
+            <label for="edit-prod-min" class="block text-xs font-bold text-stone-800 mb-1">Mínimo alerta *</label>
+            <input id="edit-prod-min" type="number" min="0" required class="w-full px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-sm outline-none focus:border-[#065F46]" />
+          </div>
+          <div>
+            <label for="edit-prod-max" class="block text-xs font-bold text-stone-800 mb-1">Stock ideal *</label>
+            <input id="edit-prod-max" type="number" min="1" required class="w-full px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-sm outline-none focus:border-[#065F46]" />
+          </div>
+        </div>
+        <div class="flex items-center justify-between gap-2 pt-2">
+          <button type="button" onclick="deleteProduct()" class="px-3 py-2 rounded-xl bg-red-800/15 hover:bg-red-800/25 text-red-900 border border-red-900/30 text-xs font-bold">Eliminar</button>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeEditProductModal()" class="px-4 py-2 rounded-xl bg-[#D6D1C4] text-xs font-semibold border border-[#B5AE9E]">Cancelar</button>
+            <button type="submit" class="px-4 py-2 rounded-xl bg-[#065F46] hover:bg-[#047857] text-[#E6E2D6] text-xs font-bold">Guardar Cambios</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 3: EDITAR PROVEEDOR Y ASIGNAR MÚLTIPLES PRODUCTOS               -->
+  <!-- ===================================================================== -->
+  <div id="edit-provider-modal" class="fixed inset-0 bg-stone-950/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-[#E6E2D6] rounded-2xl max-w-lg w-full p-5 shadow-2xl border border-[#B5AE9E] space-y-4 max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between pb-2 border-b border-[#B5AE9E]">
+        <h3 class="font-display font-bold text-stone-900 text-base">Editar Proveedor y Productos</h3>
+        <button type="button" onclick="closeEditProviderModal()" class="w-8 h-8 rounded-lg bg-[#D6D1C4] hover:bg-[#C8C2B3] text-stone-900 font-bold text-lg flex items-center justify-center">&times;</button>
+      </div>
+      <form onsubmit="saveEditedProvider(event)" class="space-y-3 overflow-y-auto pr-1">
+        <input type="hidden" id="edit-prov-id" />
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div>
+            <label for="edit-prov-name" class="block text-xs font-bold text-stone-800 mb-1">Nombre *</label>
+            <input id="edit-prov-name" type="text" required class="w-full px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-sm outline-none focus:border-[#065F46]" />
+          </div>
+          <div>
+            <label for="edit-prov-wa" class="block text-xs font-bold text-stone-800 mb-1">WhatsApp (opcional)</label>
+            <input id="edit-prov-wa" type="tel" placeholder="Ej. 56912345678" class="w-full px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-sm outline-none focus:border-[#065F46]" />
+          </div>
+        </div>
+        <div>
+          <label for="edit-prov-cat" class="block text-xs font-bold text-stone-800 mb-1">Rubro</label>
+          <input id="edit-prov-cat" type="text" class="w-full px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-sm outline-none focus:border-[#065F46]" />
+        </div>
+
+        <!-- Selección múltiple de productos -->
+        <div class="space-y-1.5 pt-1">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-bold text-stone-800">Productos asignados a este proveedor</label>
+            <span id="edit-prov-selected-count" class="text-[11px] font-bold text-[#065F46]">0 seleccionados</span>
+          </div>
+          <input id="edit-prov-prod-filter" type="search" oninput="renderEditProviderProductsList()" placeholder="Filtrar productos para marcar..." class="w-full px-3 py-1.5 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-xs outline-none focus:border-[#065F46]" />
+          <div id="edit-prov-products-list" class="max-h-44 overflow-y-auto bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl p-2 space-y-1"></div>
+        </div>
+
+        <div class="flex items-center justify-between gap-2 pt-2 border-t border-[#B5AE9E]">
+          <button type="button" onclick="deleteProvider()" class="px-3 py-2 rounded-xl bg-red-800/15 hover:bg-red-800/25 text-red-900 border border-red-900/30 text-xs font-bold">Eliminar</button>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeEditProviderModal()" class="px-4 py-2 rounded-xl bg-[#D6D1C4] text-xs font-semibold border border-[#B5AE9E]">Cancelar</button>
+            <button type="submit" class="px-4 py-2 rounded-xl bg-[#065F46] hover:bg-[#047857] text-[#E6E2D6] text-xs font-bold">Guardar Cambios</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 4: EDITAR PEDIDO PENDIENTE EN HISTORIAL                         -->
+  <!-- ===================================================================== -->
+  <div id="edit-order-modal" class="fixed inset-0 bg-stone-950/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-[#E6E2D6] rounded-2xl max-w-lg w-full p-5 shadow-2xl border border-[#B5AE9E] space-y-4 max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between pb-2 border-b border-[#B5AE9E]">
+        <div>
+          <h3 class="font-display font-bold text-stone-900 text-base">Editar Pedido Pendiente</h3>
+          <p id="edit-order-subtitle" class="text-[11px] text-stone-600">Ajusta las cantidades reales acordadas antes de recibirlo.</p>
+        </div>
+        <button type="button" onclick="closeEditOrderModal()" class="w-8 h-8 rounded-lg bg-[#D6D1C4] hover:bg-[#C8C2B3] text-stone-900 font-bold text-lg flex items-center justify-center">&times;</button>
+      </div>
+
+      <div id="edit-order-items-container" class="space-y-2 overflow-y-auto pr-1 flex-1"></div>
+
+      <div id="edit-order-add-row" class="flex items-center gap-2 pt-2 border-t border-[#B5AE9E]/60">
+        <select id="edit-order-extra-select" class="flex-1 px-3 py-2 bg-[#F3EFE4] border border-[#B5AE9E] rounded-xl text-xs font-semibold text-stone-900 outline-none focus:border-[#065F46]"></select>
+        <button type="button" onclick="addExtraItemToEditedOrder()" class="px-3 py-2 rounded-xl bg-[#D6D1C4] hover:bg-[#C8C2B3] text-stone-900 border border-[#B5AE9E] text-xs font-bold">
+          + Añadir
+        </button>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#B5AE9E]">
+        <button type="button" onclick="deletePendingOrder()" class="px-3 py-2 rounded-xl bg-red-800/15 hover:bg-red-800/25 text-red-900 border border-red-900/30 text-xs font-bold">
+          Anular Pedido
+        </button>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" id="btn-save-order-wa" onclick="saveEditedOrder(true)" class="px-3 py-2 rounded-xl bg-[#D6D1C4] hover:bg-[#C8C2B3] text-[#065F46] border border-[#B5AE9E] text-xs font-bold">
+            📲 Guardar y Reenviar WA
+          </button>
+          <button type="button" onclick="saveEditedOrder(false)" class="px-4 py-2 rounded-xl bg-[#065F46] hover:bg-[#047857] text-[#E6E2D6] text-xs font-bold">
+            Guardar Cambios
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 5: MOSTRAR QR EN EL IPAD DEL LOCAL                              -->
+  <!-- ===================================================================== -->
+  <div id="qr-order-modal" class="fixed inset-0 bg-stone-950/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-[#E6E2D6] rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-[#B5AE9E] text-center space-y-4">
+      <div class="flex items-center justify-between pb-2 border-b border-[#B5AE9E]">
+        <h3 class="font-display font-bold text-stone-900 text-base">Escanear con Celular</h3>
+        <button type="button" onclick="closeQrOrderModal()" class="w-8 h-8 rounded-lg bg-[#D6D1C4] hover:bg-[#C8C2B3] text-stone-900 font-bold text-lg flex items-center justify-center">&times;</button>
+      </div>
+      <p id="qr-order-prov-label" class="text-xs font-bold text-[#065F46]"></p>
+      <div class="bg-white p-4 rounded-2xl border border-[#B5AE9E] inline-flex items-center justify-center mx-auto">
+        <div id="qr-code-canvas"></div>
+      </div>
+      <p class="text-xs text-stone-600">Escanea con la cámara de tu teléfono, ingresa tu nombre y tu PIN de pedido, y se abrirá WhatsApp listo para enviar.</p>
+      <button type="button" onclick="closeQrOrderModal()" class="w-full py-2.5 rounded-xl bg-[#065F46] text-[#E6E2D6] text-xs font-bold">
+        Listo
+      </button>
+    </div>
+  </div>
+
+  <!-- TOAST DE FEEDBACK -->
+  <div id="toast-box" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-stone-900 text-[#E6E2D6] text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg hidden z-50"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://ninyvnpczsixsawxscov.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_j_SWYDwWgN4ntxyO37P1GA_cB-PLfsf';
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentMember = null;
+    let currentLocal = null;
+    let providers = [];
+    let products = [];
+    let orders = [];
+    let auditLogs = [];
+    let teamMembers = [];
+    let onlyCritical = false;
+
+    // Estado de modales
+    let productCreateMode = 'single';
+    let editProviderSelectedProductIds = new Set();
+    let editingOrderId = null;
+    let editingOrderItems = [];
+
+    // Estado del flujo QR en celular
+    let scannedQrOrder = null;
+    let scannedQrProvider = null;
+    let scannedQrLocal = null;
+
+    function isAdmin() {
+      const r = (currentMember?.rol || '').toLowerCase();
+      return r === 'admin' || r === 'owner' || r === 'administrador';
+    }
+
+    function showToast(msg) {
+      const box = document.getElementById('toast-box');
+      box.textContent = msg;
+      box.classList.remove('hidden');
+      setTimeout(() => box.classList.add('hidden'), 2400);
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const errEl = document.getElementById('login-error');
+      const btn = document.getElementById('btn-login');
+
+      errEl.classList.add('hidden');
+      btn.disabled = true;
+      btn.textContent = 'Entrando...';
+
+      const { data, error } = await db.auth.signInWithPassword({ email, password });
+      btn.disabled = false;
+      btn.textContent = 'Entrar a Bodega →';
+
+      if (error) {
+        errEl.textContent = 'Correo o contraseña incorrectos.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      await initSession(data.user);
+    }
+
+    async function handleLogout() {
+      await db.auth.signOut();
+      currentMember = null;
+      currentLocal = null;
+      document.getElementById('view-app').classList.add('hidden');
+      document.getElementById('header-actions').classList.add('hidden');
+      document.getElementById('view-login').classList.remove('hidden');
+      document.getElementById('header-local-name').textContent = 'Stock & Proveedores';
+      document.getElementById('header-user-info').textContent = 'Control de bodega en turno';
+    }
+
+    async function initSession(user) {
+      const { data: member, error } = await db
+        .from('miembros_local')
+        .select('id, local_id, nombre_mostrar, rol, locales(id, nombre, slug)')
+        .eq('user_id', user.id)
+        .eq('activo', true)
+        .limit(1)
+        .maybeSingle();
+
+      if (error || !member) {
+        const errEl = document.getElementById('login-error');
+        errEl.textContent = 'Tu cuenta no está asociada a ningún local activo en miembros_local.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      currentMember = member;
+      currentLocal = member.locales;
+
+      document.getElementById('header-local-name').textContent = currentLocal ? currentLocal.nombre : 'Mi Local';
+      document.getElementById('view-login').classList.add('hidden');
+      document.getElementById('view-app').classList.remove('hidden');
+      document.getElementById('header-actions').classList.remove('hidden');
+
+      applyRolePermissions();
+      await loadAllData();
+    }
+
+    function applyRolePermissions() {
+      const adminActive = isAdmin();
+      document.getElementById('header-user-info').textContent = `En turno: ${currentMember.nombre_mostrar} (${currentMember.rol})`;
+
+      const nav = document.getElementById('main-tabs-nav');
+      const tabEquipoBtn = document.getElementById('tab-btn-equipo');
+      if (adminActive) {
+        tabEquipoBtn.classList.remove('hidden');
+        nav.classList.remove('grid-cols-4');
+        nav.classList.add('grid-cols-5');
+      } else {
+        tabEquipoBtn.classList.add('hidden');
+        nav.classList.remove('grid-cols-5');
+        nav.classList.add('grid-cols-4');
+        if (!document.getElementById('tab-equipo').classList.contains('hidden')) {
+          switchTab('stock');
+        }
+      }
+
+      document.getElementById('btn-new-product').classList.toggle('hidden', !adminActive);
+      document.getElementById('admin-add-provider-box').classList.toggle('hidden', !adminActive);
+      document.getElementById('btn-clear-audit').classList.toggle('hidden', !adminActive);
+      document.getElementById('btn-clear-orders').classList.toggle('hidden', !adminActive);
+    }
+
+    async function loadAllData() {
+      if (!currentLocal) return;
+      const localId = currentLocal.id;
+
+      const queries = [
+        db.from('proveedores').select('*').eq('local_id', localId).order('nombre'),
+        db.from('productos').select('*').eq('local_id', localId).order('nombre'),
+        db.from('pedidos').select('*').eq('local_id', localId).neq('estado', 'borrador_qr').order('created_at', { ascending: false }).limit(30),
+        db.from('movimientos_stock').select('*').eq('local_id', localId).order('created_at', { ascending: false }).limit(50)
+      ];
+
+      if (isAdmin()) {
+        queries.push(
+          db.from('miembros_local').select('*').eq('local_id', localId).order('nombre_mostrar')
+        );
+      }
+
+      const results = await Promise.all(queries);
+
+      if (results[0].error) console.error('Error proveedores:', results[0].error);
+      if (results[1].error) console.error('Error productos:', results[1].error);
+      if (results[2].error) console.error('Error pedidos:', results[2].error);
+      if (results[3].error) console.error('Error bitácora:', results[3].error);
+
+      providers = results[0].data || [];
+      products = results[1].data || [];
+      orders = results[2].data || [];
+      auditLogs = results[3].data || [];
+
+      if (isAdmin() && results[4]) {
+        teamMembers = results[4].data || [];
+        renderTeamMembers();
+      }
+
+      renderProducts();
+      renderProviders();
+      renderOrderProviderSelect();
+      renderOrdersHistory();
+      renderAuditLogs();
+    }
+
+    function switchTab(tab) {
+      const allTabs = ['stock', 'pedidos', 'proveedores', 'bitacora', 'equipo'];
+      allTabs.forEach(t => {
+        const section = document.getElementById(`tab-${t}`);
+        const btn = document.getElementById(`tab-btn-${t}`);
+        if (!section || !btn) return;
+        section.classList.toggle('hidden', t !== tab);
+        btn.className = t === tab
+          ? 'py-2.5 px-2 rounded-xl text-xs font-bold bg-[#065F46] text-[#E6E2D6] transition'
+          : 'py-2.5 px-2 rounded-xl text-xs font-bold text-stone-700 hover:bg-[#D6D1C4] transition';
+        if (t === 'equipo' && !isAdmin()) {
+          btn.classList.add('hidden');
+        }
+      });
+    }
+
+    function toggleCriticalFilter() {
+      onlyCritical = !onlyCritical;
+      const btn = document.getElementById('btn-filter-critical');
+      btn.className = onlyCritical
+        ? 'px-3.5 py-2.5 rounded-xl bg-red-800 text-white text-xs font-bold transition'
+        : 'px-3.5 py-2.5 rounded-xl bg-[#E6E2D6] hover:bg-[#DDD8CA] text-stone-800 border border-[#B5AE9E] text-xs font-bold transition';
+      renderProducts();
+    }
+
+    // =========================================================================
+    // RENDER Y GESTIÓN DE STOCK / PRODUCTOS
+    // =========================================================================
+    function renderProducts() {
+      const container = document.getElementById('products-list');
+      const search = (document.getElementById('stock-search').value || '').toLowerCase();
+      const criticalCount = products.filter(p => p.stock_actual <= p.stock_minimo).length;
+      const adminActive = isAdmin();
+
+      const badge = document.getElementById('badge-critical-count');
+      if (criticalCount > 0) {
+        badge.textContent = `${criticalCount} crítico${criticalCount > 1 ? 's' : ''}`;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+
+      const filtered = products.filter(p => {
+        const matchText = p.nombre.toLowerCase().includes(search);
+        const matchCrit = !onlyCritical || p.stock_actual <= p.stock_minimo;
+        return matchText && matchCrit;
+      });
+
+      container.innerHTML = '';
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="sm:col-span-2 p-8 text-center bg-[#E6E2D6] rounded-2xl border border-dashed border-[#B5AE9E] text-xs text-stone-600">No hay productos para mostrar.</div>';
+        return;
+      }
+
+      filtered.forEach(p => {
+        const prov = providers.find(pr => pr.id === p.proveedor_id);
+        const isCritical = p.stock_actual <= p.stock_minimo;
+        const pct = Math.min(100, Math.round((p.stock_actual / Math.max(1, p.stock_maximo)) * 100));
+
+        const card = document.createElement('div');
+        card.className = `bg-[#E6E2D6] border ${isCritical ? 'border-red-800/50' : 'border-[#B5AE9E]'} rounded-2xl p-4 shadow-xs space-y-3`;
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <h3 class="font-display font-bold text-sm text-stone-900 truncate">${p.nombre}</h3>
+              <p class="text-[11px] text-stone-600 truncate">${prov ? prov.nombre : 'Sin proveedor'} • Mín: ${p.stock_minimo} ${p.unidad}(s)</p>
+            </div>
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <span class="text-[11px] font-extrabold px-2.5 py-1 rounded-lg ${isCritical ? 'bg-red-800/15 text-red-900' : 'bg-[#065F46]/15 text-[#065F46]'}">
+                ${p.stock_actual} ${p.unidad}
+              </span>
+              ${adminActive ? `
+                <button type="button" onclick="openEditProductModal('${p.id}')" title="Editar producto y stock" class="px-2 py-1 rounded-lg bg-[#D6D1C4] hover:bg-[#C8C2B3] text-stone-800 border border-[#B5AE9E] text-[11px] font-bold transition">
+                  ✏️
+                </button>
+              ` : ''}
+            </div>
+          </div>
+
+          <div class="w-full h-2 bg-[#D6D1C4] rounded-full overflow-hidden">
+            <div class="h-full ${isCritical ? 'bg-red-700' : 'bg-[#065F46]'} transition-all" style="width: ${pct}%"></div>
+          </div>
+
+          <div class="flex items-center justify-between gap-2 pt-1">
+            <button type="button" onclick="adjustStock('${p.id}', -1)" class="flex-1 py-2.5 rounded-xl bg-[#F3EFE4] hover:bg-red-800/15 text-stone-900 hover:text-red-900 border border-[#B5AE9E] font-display font-extrabold text-sm transition active:scale-95">
+              − 1
+            </button>
+            <button type="button" onclick="adjustStock('${p.id}', 1)" class="px-4 py-2.5 rounded-xl bg-[#F3EFE4] hover:bg-[#065F46]/15 text-stone-900 border border-[#B5AE9E] font-display font-bold text-sm transition active:scale-95">
+              + 1
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    async function adjustStock(productId, delta) {
+      const prod = products.find(p => p.id === productId);
+      if (!prod) return;
+      if (delta < 0 && prod.stock_actual <= 0) return;
+
+      const { data: nuevoStock, error } = await db.rpc('ajustar_stock', {
+        p_producto_id: productId,
+        p_delta: delta,
+        p_tipo: delta < 0 ? 'consumo' : 'ajuste'
+      });
+
+      if (error) {
+        showToast('Error: ' + error.message);
+        return;
+      }
+
+      prod.stock_actual = nuevoStock;
+      renderProducts();
+      renderOrderBuilder();
+      showToast(`${prod.nombre}: ${nuevoStock} ${prod.unidad}(s)`);
+      loadAllData();
+    }
+
+    function setProductCreateMode(mode) {
+      productCreateMode = mode;
+      const btnSingle = document.getElementById('btn-prod-mode-single');
+      const btnBulk = document.getElementById('btn-prod-mode-bulk');
+      const singleWrap = document.getElementById('prod-single-wrapper');
+      const bulkWrap = document.getElementById('prod-bulk-wrapper');
+
+      btnSingle.className = mode === 'single'
+        ? 'py-1.5 rounded-lg text-xs font-bold bg-[#065F46] text-[#E6E2D6] transition'
+        : 'py-1.5 rounded-lg text-xs font-bold text-stone-700 hover:text-stone-900 transition';
+
+      btnBulk.className = mode === 'bulk'
+        ? 'py-1.5 rounded-lg text-xs font-bold bg-[#065F46] text-[#E6E2D6] transition'
+        : 'py-1.5 rounded-lg text-xs font-bold text-stone-700 hover:text-stone-900 transition';
+
+      singleWrap.classList.toggle('hidden', mode !== 'single');
+      bulkWrap.classList.toggle('hidden', mode !== 'bulk');
+    }
+
+    function openProductModal() {
+      const sel = document.getElementById('prod-provider');
+      sel.innerHTML = '<option value="">Sin proveedor</option>' + providers.map(pr => `<option value="${pr.id}">${pr.nombre}</option>`).join('');
+      setProductCreateMode('single');
+      document.getElementById('product-modal').classList.remove('hidden');
+    }
+
+    function closeProductModal() {
+      document.getElementById('product-modal').classList.add('hidden');
+    }
+
+    async function saveNewProduct(e) {
+      e.preventDefault();
+      const unidad = document.getElementById('prod-unit').value.trim();
+      const proveedorId = document.getElementById('prod-provider').value || null;
+      const stockActual = parseInt(document.getElementById('prod-actual').value, 10) || 0;
+      const stockMin = parseInt(document.getElementById('prod-min').value, 10) || 0;
+      const stockMax = parseInt(document.getElementById('prod-max').value, 10) || 1;
+
+      let rowsToInsert = [];
+
+      if (productCreateMode === 'single') {
+        const nombre = document.getElementById('prod-name').value.trim();
+        if (!nombre) {
+          showToast('Escribe el nombre del producto');
+          return;
+        }
+        rowsToInsert.push({
+          local_id: currentLocal.id,
+          proveedor_id: proveedorId,
+          nombre,
+          unidad,
+          stock_actual: stockActual,
+          stock_minimo: stockMin,
+          stock_maximo: stockMax
+        });
+      } else {
+        const rawBulk = document.getElementById('prod-bulk-names').value || '';
+        const names = rawBulk
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean);
+
+        if (names.length === 0) {
+          showToast('Ingresa al menos 1 producto separado por coma');
+          return;
+        }
+
+        rowsToInsert = names.map(nombre => ({
+          local_id: currentLocal.id,
+          proveedor_id: proveedorId,
+          nombre,
+          unidad,
+          stock_actual: stockActual,
+          stock_minimo: stockMin,
+          stock_maximo: stockMax
+        }));
+      }
+
+      const { error } = await db.from('productos').insert(rowsToInsert);
+
+      if (error) {
+        showToast('Error: ' + error.message);
+        return;
+      }
+
+      e.target.reset();
+      document.getElementById('prod-unit').value = 'unidad';
+      closeProductModal();
+      showToast(`✓ ${rowsToInsert.length} producto(s) agregado(s)`);
+      await loadAllData();
+    }
+
+    function openEditProductModal(productId) {
+      const prod = products.find(p => p.id === productId);
+      if (!prod) return;
+
+      document.getElementById('edit-prod-id').value = prod.id;
+      document.getElementById('edit-prod-name').value = prod.nombre;
+      document.getElementById('edit-prod-unit').value = prod.unidad;
+      document.getElementById('edit-prod-actual').value = prod.stock_actual;
+      document.getElementById('edit-prod-min').value = prod.stock_minimo;
+      document.getElementById('edit-prod-max').value = prod.stock_maximo;
+
+      const sel = document.getElementById('edit-prod-provider');
+      sel.innerHTML = '<option value="">Sin proveedor</option>' + providers.map(pr => `<option value="${pr.id}">${pr.nombre}</option>`).join('');
+      sel.value = prod.proveedor_id || '';
+
+      document.getElementById('edit-product-modal').classList.remove('hidden');
+    }
+
+    function closeEditProductModal() {
+      document.getElementById('edit-product-modal').classList.add('hidden');
+    }
+
+    async function saveEditedProduct(e) {
+      e.preventDefault();
+      const id = document.getElementById('edit-prod-id').value;
+      const prod = products.find(p => p.id === id);
+      if (!prod) return;
+
+      const nombre = document.getElementById('edit-prod-name').value.trim();
+      const unidad = document.getElementById('edit-prod-unit').value.trim();
+      const proveedorId = document.getElementById('edit-prod-provider').value || null;
+      const nuevoStock = parseInt(document.getElementById('edit-prod-actual').value, 10);
+      const stockMin = parseInt(document.getElementById('edit-prod-min').value, 10) || 0;
+      const stockMax = parseInt(document.getElementById('edit-prod-max').value, 10) || 1;
+
+      const delta = nuevoStock - prod.stock_actual;
+
+      if (delta !== 0) {
+        const { error: rpcError } = await db.rpc('ajustar_stock', {
+          p_producto_id: id,
+          p_delta: delta,
+          p_tipo: 'ajuste'
+        });
+        if (rpcError) {
+          showToast('Error al ajustar stock: ' + rpcError.message);
+          return;
+        }
+      }
+
+      const { error } = await db
+        .from('productos')
+        .update({
+          nombre,
+          unidad,
+          proveedor_id: proveedorId,
+          stock_minimo: stockMin,
+          stock_maximo: stockMax
+        })
+        .eq('id', id);
+
+      if (error) {
+        showToast('Error: ' + error.message);
+        return;
+      }
+
+      closeEditProductModal();
+      showToast('✓ Producto actualizado');
+      await loadAllData();
+    }
+
+    async function deleteProduct() {
+      const id = document.getElementById('edit-prod-id').value;
+      const prod = products.find(p => p.id === id);
+      if (!prod) return;
+      if (!confirm(`¿Eliminar "${prod.nombre}" del inventario?`)) return;
+
+      const { error } = await db.from('productos').delete().eq('id', id);
+      if (error) {
+        showToast('Error: ' + error.message);
+        return;
+      }
+
+      closeEditProductModal();
+      showToast('Producto eliminado');
+      await loadAllData();
+    }
+
+    // =========================================================================
+    // PROVEEDORES (CREAR, EDITAR Y SELECCIÓN MÚLTIPLE DE PRODUCTOS)
+    // =========================================================================
+    async function addProvider(e) {
+      e.preventDefault();
+      const nombre = document.getElementById('prov-name').value.trim();
+      const waRaw = document.getElementById('prov-wa').value.replace(/\D/g, '');
+      const wa = waRaw || null;
+      const categoria = document.getElementById('prov-cat').value.trim();
+
+      const { error } = await db.from('proveedores').insert({
+        local_id: currentLocal.id,
+        nombre,
+        telefono_whatsapp: wa,
+        categoria
+      });
+
+      if (error) {
+        showToast('Error: ' + error.message);
+        return;
+      }
+
+      e.target.reset();
+      showToast('✓ Proveedor guardado');
+      await loadAllData();
+    }
+
+    function renderProviders() {
+      const list = document.getElementById('providers-list');
+      if (!list) return;
+      const adminActive = isAdmin();
+      list.innerHTML = '';
+
+      if (providers.length === 0) {
+        list.innerHTML = '<div class="sm:col-span-2 p-6 text-center bg-[#E6E2D6] rounded-2xl border border-dashed border-[#B5AE9E] text-xs text-stone-600">Aún no agregas proveedores.</div>';
+        return;
+      }
+
+      providers.forEach(pr => {
+        const assignedCount = products.filter(p => p.proveedor_id === pr.id).length;
+        const hasWa = Boolean(pr.telefono_whatsapp && String(pr.telefono_whatsapp).trim());
+        const card = document.createElement('div');
+        card.className = 'bg-[#E6E2D6] border border-[#B5AE9E] rounded-2xl p-4 flex items-center justify-between gap-2';
+        card.innerHTML = `
+          <div class="min-w-0">
+            <p class="font-display font-bold text-sm text-stone-900 truncate">${pr.nombre}</p>
+            <p class="text-xs text-stone-600 truncate">
+              ${hasWa ? 'WhatsApp: +' + pr.telefono_whatsapp : 'Sin WhatsApp registrado'}
+              ${pr.categoria ? ' • ' + pr.categoria : ''}
+            </p>
+            <p class="text-[11px] font-semibold text-[#065F46] mt-0.5">${assignedCount} producto(s) asignado(s)</p>
+          </div>
+          <div class="flex items-center gap-1.5 flex-shrink-0">
+            ${adminActive ? `
+              <button type="button" onclick="openEditProviderModal('${pr.id}')" class="px-2.5 py-1.5 rounded-xl bg-[#D6D1C4] hover:bg-[#C8C2B3] text-stone-900 border border-[#B5AE9E] text-xs font-bold">
+                ✏️ Editar
+              </button>
+            ` : ''}
+            ${hasWa ? `
+              <a href="https://wa.me/${pr.telefono_whatsapp}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-xl bg-[#D6D1C4] hover:bg-[#C8C2B3] text-[#065F46] border border-[#B5AE9E] text-xs font-bold">Chat</a>
+            ` : ''}
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    function openEditProviderModal(providerId) {
+      const prov = providers.find(pr => pr.id === providerId);
+      if (!prov) return;
+
+      document.getElementById('edit-prov-id').value = prov.id;
+      document.getElementById('edit-prov-name').value = prov.nombre;
+      document.getElementById('edit-prov-wa').value = prov.telefono_whatsapp || '';
+      document.getElementById('edit-prov-cat').value = prov.categoria || '';
+      document.getElementById('edit-prov-prod-filter').value = '';
+
+      editProviderSelectedProductIds = new Set(
+        products.filter(p => p.proveedor_id === prov.id).map(p => p.id)
+      );
+
+      renderEditProviderProductsList();
+      document.getElementById('edit-provider-modal').classList.remove('hidden');
+    }
+
+    function closeEditProviderModal() {
+      document.getElementById('edit-provider-modal').classList.add('hidden');
+    }
+
+    function renderEditProviderProductsList() {
+      const container = document.getElementById('edit-prov-products-list');
+      const filter = (document.getElementById('edit-prov-prod-filter').value || '').toLowerCase();
+      const currentProvId = document.getElementById('edit-prov-id').value;
+
+      document.getElementById('edit-prov-selected-count').textContent = `${editProviderSelectedProductIds.size} seleccionado(s)`;
+
+      const filtered = products.filter(p => p.nombre.toLowerCase().includes(filter));
+      container.innerHTML = '';
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<p class="text-xs text-stone-500 p-2 text-center">Sin productos coincidentes.</p>';
+        return;
+      }
+
+      filtered.forEach(p => {
+        const checked = editProviderSelectedProductIds.has(p.id);
+        const otherProv = p.proveedor_id && p.proveedor_id !== currentProvId
+          ? providers.find(pr => pr.id === p.proveedor_id)
+          : null;
+
+        const label = document.createElement('label');
+        label.className = 'flex items-center justify-between gap-2 p-2 rounded-lg hover:bg-[#E6E2D6] cursor-pointer text-xs';
+        label.innerHTML = `
+          <span class="flex items-center gap-2 min-w-0">
+            <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleProviderProductSelection('${p.id}', this.checked)" class="w-4 h-4 accent-[#065F46]" />
+            <span class="font-semibold text-stone-900 truncate">${p.nombre}</span>
+          </span>
+          <span class="text-[10px] text-stone-500 flex-shrink-0">
+            ${otherProv ? `(actual: ${otherProv.nombre})` : p.unidad}
+          </span>
+        `;
+        container.appendChild(label);
+      });
+    }
+
+    function toggleProviderProductSelection(productId, isChecked) {
+      if (isChecked) {
+        editProviderSelectedProductIds.add(productId);
+      } else {
+        editProviderSelectedProductIds.delete(productId);
+      }
+      document.getElementById('edit-prov-selected-count').textContent = `${editProviderSelectedProductIds.size} seleccionado(s)`;
+    }
+
+    async function saveEditedProvider(e) {
+      e.preventDefault();
+      const provId = document.getElementById('edit-prov-id').value;
+      const nombre = document.getElementById('edit-prov-name').value.trim();
+      const waRaw = document.getElementById('edit-prov-wa').value.replace(/\D/g, '');
+      const wa = waRaw || null;
+      const categoria = document.getElementById('edit-prov-cat').value.trim();
+
+      const { error: provErr } = await db
+        .from('proveedores')
+        .update({ nombre, telefono_whatsapp: wa, categoria })
+        .eq('id', provId);
+
+      if (provErr) {
+        showToast('Error: ' + provErr.message);
+        return;
+      }
+
+      const selectedIds = Array.from(editProviderSelectedProductIds);
+      const previouslyAssignedIds = products
+        .filter(p => p.proveedor_id === provId)
+        .map(p => p.id);
+
+      const toUnassignIds = previouslyAssignedIds.filter(id => !editProviderSelectedProductIds.has(id));
+
+      if (selectedIds.length > 0) {
+        const { error: assignErr } = await db
+          .from('productos')
+          .update({ proveedor_id: provId })
+          .in('id', selectedIds);
+        if (assignErr) {
+          showToast('Error al asignar productos: ' + assignErr.message);
+          return;
+        }
+      }
+
+      if (toUnassignIds.length > 0) {
+        const { error: unassignErr } = await db
+          .from('productos')
+          .update({ proveedor_id: null })
+          .in('id', toUnassignIds);
+        if (unassignErr) {
+          showToast('Error al desasignar productos: ' + unassignErr.message);
+          return;
+        }
+      }
+
+      closeEditProviderModal();
+      showToast('✓ Proveedor y productos actualizados');
+      await loadAllData();
+    }
+
+    async function deleteProvider() {
+      const provId = document.getElementById('edit-prov-id').value;
+      const prov = providers.find(pr => pr.id === provId);
+      if (!prov) return;
+      if (!confirm(`¿Eliminar proveedor "${prov.nombre}"? Sus productos quedarán sin proveedor asignado.`)) return;
+
+      await db.from('productos').update({ proveedor_id: null }).eq('proveedor_id', provId);
+      const { error } = await db.from('proveedores').delete().eq('id', provId);
+      if (error) {
+        showToast('Error: ' + error.message);
+        return;
+      }
+
+      closeEditProviderModal();
+      showToast('Proveedor eliminado');
+      await loadAllData();
+    }
+
+    // =========================================================================
+    // PEDIDOS POR WHATSAPP + QR PARA CELULAR + EDICIÓN + ELIMINACIÓN
+    // =========================================================================
+    function renderOrderProviderSelect() {
+      const sel = document.getElementById('order-provider-select');
+      const prev = sel.value;
+      sel.innerHTML = providers.length === 0
+        ? '<option value="">Agrega un proveedor primero</option>'
+        : providers.map(pr => `<option value="${pr.id}">${pr.nombre}</option>`).join('');
+      if (prev && providers.some(pr => pr.id === prev)) sel.value = prev;
+      renderOrderBuilder();
+    }
+
+    function renderOrderBuilder() {
+      const provId = document.getElementById('order-provider-select').value;
+      const box = document.getElementById('order-builder-items');
+      const summary = document.getElementById('order-builder-summary');
+      box.innerHTML = '';
+
+      if (!provId) {
+        summary.textContent = 'Selecciona un proveedor';
+        return;
+      }
+
+      const provProducts = products.filter(p => p.proveedor_id === provId);
+      if (provProducts.length === 0) {
+        box.innerHTML = '<p class="text-xs text-stone-600">Este proveedor aún no tiene productos asignados.</p>';
+        summary.textContent = '0 productos';
+        return;
+      }
+
+      provProducts.forEach(p => {
+        const isCrit = p.stock_actual <= p.stock_minimo;
+        const suggested = Math.max(1, p.stock_maximo - p.stock_actual);
+        const row = document.createElement('div');
+        row.className = 'p-3 rounded-xl bg-[#F3EFE4] border border-[#B5AE9E] flex items-center justify-between gap-3';
+        row.innerHTML = `
+          <label class="flex items-center gap-2.5 min-w-0 cursor-pointer">
+            <input type="checkbox" class="order-chk w-4 h-4 accent-[#065F46]" data-id="${p.id}" ${isCrit ? 'checked' : ''} onchange="updateOrderSummary()" />
+            <div class="min-w-0">
+              <p class="text-xs font-bold text-stone-900 truncate">${p.nombre} ${isCrit ? '🔴' : ''}</p>
+              <p class="text-[11px] text-stone-600">Actual: ${p.stock_actual} / Ideal: ${p.stock_maximo} ${p.unidad}</p>
+            </div>
+          </label>
+          <input type="number" min="1" value="${suggested}" class="order-qty w-16 px-2 py-1.5 bg-[#E6E2D6] border border-[#B5AE9E] rounded-lg text-xs font-bold text-center" data-id="${p.id}" />
+        `;
+        box.appendChild(row);
+      });
+      updateOrderSummary();
+    }
+
+    function updateOrderSummary() {
+      const checked = document.querySelectorAll('.order-chk:checked').length;
+      document.getElementById('order-builder-summary').textContent = `${checked} producto(s) seleccionado(s)`;
+    }
+
+    function getSelectedOrderItemsFromBuilder() {
+      const items = [];
+      document.querySelectorAll('.order-chk:checked').forEach(chk => {
+        const prodId = chk.dataset.id;
+        const prod = products.find(p => p.id === prodId);
+        const qtyInput = document.querySelector(`.order-qty[data-id="${prodId}"]`);
+        const cantidad = parseInt(qtyInput ? qtyInput.value : '1', 10) || 1;
+        if (prod) {
+          items.push({ producto_id: prod.id, nombre: prod.nombre, unidad: prod.unidad, cantidad });
+        }
+      });
+      return items;
+    }
+
+    function buildWhatsAppOrderUrl(prov, items, localNombreOverride) {
+      if (!prov || !prov.telefono_whatsapp) return null;
+      const localName = localNombreOverride || currentLocal?.nombre || 'nuestro local';
+      const lines = items.map(i => `• ${i.cantidad} ${i.unidad}(s) de ${i.nombre}`).join('\n');
+      const msg = encodeURIComponent(`Hola ${prov.nombre}, te escribimos de ${localName} para hacer el siguiente pedido:\n\n${lines}\n\n¡Muchas gracias!`);
+      return `https://wa.me/${prov.telefono_whatsapp}?text=${msg}`;
+    }
+
+    async function createOrderAndOpenWhatsApp() {
+      const provId = document.getElementById('order-provider-select').value;
+      const prov = providers.find(pr => pr.id === provId);
+      if (!prov) return;
+
+      const items = getSelectedOrderItemsFromBuilder();
+      if (items.length === 0) {
+        showToast('Selecciona al menos 1 producto');
+        return;
+      }
+
+      const { error } = await db.from('pedidos').insert({
+        local_id: currentLocal.id,
+        proveedor_id: prov.id,
+        items,
+        estado: 'pendiente',
+        creado_por: (await db.auth.getUser()).data.user.id,
+        creado_por_nombre: currentMember.nombre_mostrar
+      });
+
+      if (error) {
+        showToast('Error: ' + error.message);
+        return;
+      }
+
+      const waUrl = buildWhatsAppOrderUrl(prov, items);
+      if (waUrl) {
+        window.open(waUrl, '_blank');
+        showToast('✓ Pedido guardado y abierto en WhatsApp');
+      } else {
+        showToast('✓ Pedido guardado (proveedor sin WhatsApp)');
+      }
+
+      await loadAllData();
+    }
+
+    async function createOrderQRForMobile() {
+      const provId = document.getElementById('order-provider-select').value;
+      const prov = providers.find(pr => pr.id === provId);
+      if (!prov) return;
+
+      const items = getSelectedOrderItemsFromBuilder();
+      if (items.length === 0) {
+        showToast('Selecciona al menos 1 producto para generar el QR');
+        return;
+      }
+
+      const userRes = await db.auth.getUser();
+      const { data: createdOrder, error } = await db
+        .from('pedidos')
+        .insert({
+          local_id: currentLocal.id,
+          proveedor_id: prov.id,
+          items,
+          estado: 'borrador_qr',
+          creado_por: userRes.data.user.id,
+          creado_por_nombre: currentMember.nombre_mostrar
+        })
+        .select('id')
+        .single();
+
+      if (error || !createdOrder) {
+        showToast('Error al crear QR: ' + (error?.message || 'sin ID'));
+        return;
+      }
+
+      const qrUrl = `${window.location.origin}${window.location.pathname}?orden_qr=${createdOrder.id}`;
+      const qrContainer = document.getElementById('qr-code-canvas');
+      qrContainer.innerHTML = '';
+
+      new QRCode(qrContainer, {
+        text: qrUrl,
+        width: 210,
+        height: 210,
+        colorDark: '#1C1917',
+        colorLight: '#FFFFFF',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+
+      document.getElementById('qr-order-prov-label').textContent = `Proveedor: ${prov.nombre} (${items.length} ítem(s))`;
+      document.getElementById('qr-order-modal').classList.remove('hidden');
+    }
+
+    function closeQrOrderModal() {
+      document.getElementById('qr-order-modal').classList.add('hidden');
+      loadAllData();
+    }
+
+    async function initQrCheckoutFlow(orderId) {
+      document.getElementById('view-login').classList.add('hidden');
+      document.getElementById('view-app').classList.add('hidden');
+      document.getElementById('view-qr-checkout').classList.remove('hidden');
+
+      const { data: order, error } = await db
+        .from('pedidos')
+        .select('id, local_id, proveedor_id, items, estado, proveedores(nombre, telefono_whatsapp), locales(nombre)')
+        .eq('id', orderId)
+        .maybeSingle();
+
+      const errEl = document.getElementById('qr-checkout-error');
+      const btn = document.getElementById('btn-qr-confirm');
+
+      if (error || !order) {
+        document.getElementById('qr-checkout-subtitle').textContent = 'No se encontró el pedido.';
+        errEl.textContent = 'El código QR no es válido o expiró.';
+        errEl.classList.remove('hidden');
+        btn.disabled = true;
+        return;
+      }
+
+      if (order.estado !== 'borrador_qr') {
+        document.getElementById('qr-checkout-subtitle').textContent = 'Este pedido ya fue confirmado anteriormente.';
+        errEl.textContent = 'Este QR ya fue usado para registrar el pedido.';
+        errEl.classList.remove('hidden');
+        btn.disabled = true;
+        return;
+      }
+
+      scannedQrOrder = order;
+      scannedQrProvider = order.proveedores;
+      scannedQrLocal = order.locales;
+
+      const hasWa = Boolean(scannedQrProvider?.telefono_whatsapp);
+      document.getElementById('header-local-name').textContent = scannedQrLocal?.nombre || 'Stock & Proveedores';
+      document.getElementById('header-user-info').textContent = 'Confirmación de pedido por QR';
+      document.getElementById('qr-checkout-title').textContent = `Pedido a ${scannedQrProvider?.nombre || 'Proveedor'}`;
+      document.getElementById('qr-checkout-subtitle').textContent = hasWa
+        ? 'Revisa los ítems e ingresa tu nombre y PIN para abrir WhatsApp.'
+        : 'Revisa los ítems e ingresa tu nombre y PIN para registrar el pedido.';
+      btn.textContent = hasWa ? 'Confirmar y Abrir WhatsApp →' : 'Confirmar Pedido →';
+
+      const itemsBox = document.getElementById('qr-checkout-items');
+      itemsBox.innerHTML = (order.items || [])
+        .map(i => `<div class="flex justify-between gap-2"><span>• ${i.nombre}</span><strong>${i.cantidad} ${i.unidad}(s)</strong></div>`)
+        .join('');
+    }
+
+    async function submitQrOrderAuth(e) {
+      e.preventDefault();
+      if (!scannedQrOrder || !scannedQrProvider) return;
+
+      const nombre = document.getElementById('qr-user-name').value.trim();
+      const pin = document.getElementById('qr-user-pin').value.trim();
+      const errEl = document.getElementById('qr-checkout-error');
+      const btn = document.getElementById('btn-qr-confirm');
+
+      errEl.classList.add('hidden');
+      btn.disabled = true;
+      btn.textContent = 'Verificando...';
+
+      const { data: nombreOficial, error } = await db.rpc('firmar_pedido_qr', {
+        p_pedido_id: scannedQrOrder.id,
+        p_nombre: nombre,
+        p_pin: pin
+      });
+
+      btn.disabled = false;
+      btn.textContent = 'Confirmar y Abrir WhatsApp →';
+
+      if (error || !nombreOficial) {
+        errEl.textContent = error?.message || 'Nombre o PIN incorrectos.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      const waUrl = buildWhatsAppOrderUrl(
+        scannedQrProvider,
+        scannedQrOrder.items || [],
+        scannedQrLocal?.nombre
+      );
+
+      if (waUrl) {
+        window.location.href = waUrl;
+      } else {
+        document.getElementById('qr-checkout-subtitle').textContent = `✓ Pedido registrado a nombre de ${nombreOficial}. (Este proveedor no tiene WhatsApp guardado).`;
+        btn.disabled = true;
+      }
+    }
+
+    // Historial de pedidos, edición y eliminación
+    function renderOrdersHistory() {
+      const list = document.getElementById('orders-history-list');
+      if (!list) return;
+      list.innerHTML = '';
+
+      if (orders.length === 0) {
+        list.innerHTML = '<p class="text-xs text-stone-600">Aún no hay pedidos registrados.</p>';
+        return;
+      }
+
+      orders.forEach(o => {
+        const prov = providers.find(pr => pr.id === o.proveedor_id);
+        const isPending = o.estado === 'pendiente';
+        const itemsText = (o.items || []).map(i => `${i.cantidad}x ${i.nombre}`).join(', ');
+        const dateLabel = new Date(o.created_at).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+        const card = document.createElement('div');
+        card.className = 'p-3.5 rounded-xl bg-[#F3EFE4] border border-[#B5AE9E] flex flex-col sm:flex-row sm:items-center justify-between gap-3';
+        card.innerHTML = `
+          <div class="space-y-0.5 min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="font-display font-bold text-xs text-stone-900">${prov ? prov.nombre : 'Proveedor'}</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isPending ? 'bg-amber-700/15 text-amber-900' : 'bg-[#065F46]/15 text-[#065F46]'}">
+                ${isPending ? '⏳ Pendiente' : '✓ Recibido'}
+              </span>
+            </div>
+            <p class="text-xs text-stone-700">${itemsText}</p>
+            <p class="text-[10px] text-stone-500">Pedido por ${o.creado_por_nombre || 'Equipo'} (${dateLabel})${o.recibido_por_nombre ? ' • Recibido por ' + o.recibido_por_nombre : ''}</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 flex-shrink-0">
+            ${isPending ? `
+              <button type="button" onclick="openEditOrderModal('${o.id}')" class="px-3 py-2 rounded-xl bg-[#E6E2D6] hover:bg-[#DDD8CA] text-stone-900 border border-[#B5AE9E] text-xs font-bold transition">
+                ✏️ Editar
+              </button>
+              <button type="button" onclick="markOrderReceived('${o.id}')" class="px-3.5 py-2 rounded-xl bg-[#065F46] hover:bg-[#047857] text-[#E6E2D6] text-xs font-bold transition">
+                ✅ Marcar Recibido
+              </button>
+            ` : ''}
+            <button type="button" onclick="deleteOrderFromHistory('${o.id}')" title="Eliminar pedido del historial" class="px-2.5 py-2 rounded-xl bg-red-800/10 hover:bg-red-800/25 text-red-900 border border-red-900/25 text-xs font-bold transition">
+              🗑️
+            </button>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    async function deleteOrderFromHistory(orderId) {
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      const estadoTexto = order.estado === 'pendiente'
+        ? 'pendiente'
+        : 'ya recibido (no se descontará el stock ya sumado)';
+      if (!confirm(`¿Eliminar este pedido ${estadoTexto} del historial?`)) return;
+
+      const { error } = await db
+        .from('pedidos')
+        .delete()
+        .eq('id', orderId);
+
+      if (error) {
+        showToast('Error al eliminar pedido: ' + error.message);
+        return;
+      }
+
+      orders = orders.filter(o => o.id !== orderId);
+      renderOrdersHistory();
+      showToast('✓ Pedido eliminado del historial');
+    }
+
+    async function clearAllOrders() {
+      if (!isAdmin() || !currentLocal) return;
+      if (!confirm('¿Eliminar TODOS los pedidos realizados (pendientes y recibidos) de este local?')) return;
+
+      const { error } = await db
+        .from('pedidos')
+        .delete()
+        .eq('local_id', currentLocal.id);
+
+      if (error) {
+        showToast('Error al vaciar pedidos: ' + error.message);
+        return;
+      }
+
+      orders = [];
+      renderOrdersHistory();
+      showToast('✓ Historial de pedidos vaciado');
+    }
+
+    function openEditOrderModal(orderId) {
+      const order = orders.find(o => o.id === orderId);
+      if (!order || order.estado !== 'pendiente') return;
+
+      editingOrderId = orderId;
+      editingOrderItems = (order.items || []).map(item => ({ ...item }));
+
+      const prov = providers.find(pr => pr.id === order.proveedor_id);
+      const hasWa = Boolean(prov?.telefono_whatsapp);
+      document.getElementById('edit-order-subtitle').textContent =
+        `Proveedor: ${prov ? prov.nombre : 'Sin nombre'} • Ajusta antes de marcar recibido.`;
+      document.getElementById('btn-save-order-wa').classList.toggle('hidden', !hasWa);
+
+      renderEditOrderItems();
+      document.getElementById('edit-order-modal').classList.remove('hidden');
+    }
+
+    function closeEditOrderModal() {
+      editingOrderId = null;
+      editingOrderItems = [];
+      document.getElementById('edit-order-modal').classList.add('hidden');
+    }
+
+    function renderEditOrderItems() {
+      const container = document.getElementById('edit-order-items-container');
+      container.innerHTML = '';
+
+      if (editingOrderItems.length === 0) {
+        container.innerHTML = '<p class="text-xs text-stone-600 text-center py-3">El pedido no tiene productos. Añade uno abajo o anula el pedido.</p>';
+      } else {
+        editingOrderItems.forEach((item, idx) => {
+          const row = document.createElement('div');
+          row.className = 'p-2.5 rounded-xl bg-[#F3EFE4] border border-[#B5AE9E] flex items-center justify-between gap-2';
+          row.innerHTML = `
+            <div class="min-w-0">
+              <p class="text-xs font-bold text-stone-900 truncate">${item.nombre}</p>
+              <p class="text-[10px] text-stone-500">Unidad: ${item.unidad}</p>
+            </div>
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <input type="number" min="1" value="${item.cantidad}" onchange="updateEditedOrderItemQty(${idx}, this.value)" class="w-16 px-2 py-1 bg-[#E6E2D6] border border-[#B5AE9E] rounded-lg text-xs font-bold text-center" />
+              <button type="button" onclick="removeEditedOrderItem(${idx})" class="w-7 h-7 rounded-lg bg-red-800/15 hover:bg-red-800/25 text-red-900 font-bold text-xs flex items-center justify-center" title="Quitar del pedido">✕</button>
+            </div>
+          `;
+          container.appendChild(row);
+        });
+      }
+
+      const order = orders.find(o => o.id === editingOrderId);
+      const extraSelect = document.getElementById('edit-order-extra-select');
+      const usedIds = new Set(editingOrderItems.map(i => i.producto_id));
+
+      const availableProducts = products.filter(p =>
+        !usedIds.has(p.id) && (!order?.proveedor_id || p.proveedor_id === order.proveedor_id)
+      );
+
+      if (availableProducts.length === 0) {
+        extraSelect.innerHTML = '<option value="">Sin más productos disponibles de este proveedor</option>';
+      } else {
+        extraSelect.innerHTML = availableProducts
+          .map(p => `<option value="${p.id}">${p.nombre} (${p.unidad})</option>`)
+          .join('');
+      }
+    }
+
+    function updateEditedOrderItemQty(index, rawVal) {
+      const qty = Math.max(1, parseInt(rawVal, 10) || 1);
+      if (editingOrderItems[index]) {
+        editingOrderItems[index].cantidad = qty;
+      }
+    }
+
+    function removeEditedOrderItem(index) {
+      editingOrderItems.splice(index, 1);
+      renderEditOrderItems();
+    }
+
+    function addExtraItemToEditedOrder() {
+      const prodId = document.getElementById('edit-order-extra-select').value;
+      const prod = products.find(p => p.id === prodId);
+      if (!prod) return;
+
+      const suggested = Math.max(1, prod.stock_maximo - prod.stock_actual);
+      editingOrderItems.push({
+        producto_id: prod.id,
+        nombre: prod.nombre,
+        unidad: prod.unidad,
+        cantidad: suggested
+      });
+      renderEditOrderItems();
+    }
+
+    async function saveEditedOrder(reopenWhatsApp) {
+      if (!editingOrderId) return;
+      if (editingOrderItems.length === 0) {
+        showToast('El pedido debe tener al menos 1 producto');
+        return;
+      }
+
+      const order = orders.find(o => o.id === editingOrderId);
+      const prov = order ? providers.find(pr => pr.id === order.proveedor_id) : null;
+
+      const { error } = await db
+        .from('pedidos')
+        .update({ items: editingOrderItems })
+        .eq('id', editingOrderId);
+
+      if (error) {
+        showToast('Error al actualizar pedido: ' + error.message);
+        return;
+      }
+
+      const itemsSnapshot = [...editingOrderItems];
+      closeEditOrderModal();
+      showToast('✓ Pedido actualizado');
+
+      if (reopenWhatsApp && prov) {
+        const waUrl = buildWhatsAppOrderUrl(prov, itemsSnapshot);
+        if (waUrl) window.open(waUrl, '_blank');
+      }
+
+      await loadAllData();
+    }
+
+    async function deletePendingOrder() {
+      if (!editingOrderId) return;
+      if (!confirm('¿Anular y eliminar este pedido pendiente?')) return;
+
+      const { error } = await db.from('pedidos').delete().eq('id', editingOrderId);
+      if (error) {
+        showToast('Error: ' + error.message);
+        return;
+      }
+
+      closeEditOrderModal();
+      showToast('Pedido anulado');
+      await loadAllData();
+    }
+
+    async function markOrderReceived(orderId) {
+      const { error } = await db.rpc('recibir_pedido', { p_pedido_id: orderId });
+      if (error) {
+        showToast('Error: ' + error.message);
+        return;
+      }
+      showToast('✓ Pedido recibido y stock sumado');
+      await loadAllData();
+    }
+
+    // =========================================================================
+    // BITÁCORA (CON ELIMINACIÓN INDIVIDUAL Y LIMPIEZA TOTAL SOLO ADMIN)
+    // =========================================================================
+    function renderAuditLogs() {
+      const list = document.getElementById('audit-log-list');
+      if (!list) return;
+      const adminActive = isAdmin();
+      list.innerHTML = '';
+
+      if (auditLogs.length === 0) {
+        list.innerHTML = '<p class="text-xs text-stone-600">Sin movimientos registrados todavía.</p>';
+        return;
+      }
+
+      auditLogs.forEach(log => {
+        const matchedProd = products.find(p => p.id === log.producto_id);
+        const prodName = matchedProd ? matchedProd.nombre : (log.producto_nombre || 'Producto');
+        const isPlus = log.delta > 0;
+        const timeStr = new Date(log.created_at).toLocaleString('es-CL', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+        const row = document.createElement('div');
+        row.className = 'p-2.5 rounded-xl bg-[#F3EFE4] border border-[#B5AE9E] flex items-center justify-between gap-2 text-xs';
+        row.innerHTML = `
+          <div class="min-w-0">
+            <span class="font-bold text-stone-900">${log.usuario_nombre || 'Equipo'}</span>
+            <span class="text-stone-600"> ${isPlus ? 'sumó' : 'descontó'} </span>
+            <span class="font-extrabold ${isPlus ? 'text-[#065F46]' : 'text-red-900'}">${isPlus ? '+' + log.delta : log.delta}</span>
+            <span class="text-stone-800"> en ${prodName}</span>
+            <span class="text-stone-500"> (quedó en ${log.stock_despues})</span>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <span class="text-[10px] text-stone-500">${timeStr}</span>
+            ${adminActive ? `
+              <button type="button" onclick="deleteSingleAuditLog('${log.id}')" title="Eliminar este registro" class="w-6 h-6 rounded-lg bg-red-800/10 hover:bg-red-800/25 text-red-900 font-bold text-[11px] flex items-center justify-center transition">
+                ✕
+              </button>
+            ` : ''}
+          </div>
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    async function deleteSingleAuditLog(logId) {
+      if (!isAdmin()) return;
+      const { error } = await db
+        .from('movimientos_stock')
+        .delete()
+        .eq('id', logId);
+
+      if (error) {
+        showToast('Error al eliminar registro: ' + error.message);
+        return;
+      }
+
+      auditLogs = auditLogs.filter(l => l.id !== logId);
+      renderAuditLogs();
+      showToast('Registro eliminado');
+    }
+
+    async function clearAllAuditLogs() {
+      if (!isAdmin() || !currentLocal) return;
+      if (!confirm('¿Vaciar todo el historial de movimientos de la bitácora? Esta acción no se puede deshacer.')) return;
+
+      const { error } = await db
+        .from('movimientos_stock')
+        .delete()
+        .eq('local_id', currentLocal.id);
+
+      if (error) {
+        showToast('Error al limpiar bitácora: ' + error.message);
+        return;
+      }
+
+      auditLogs = [];
+      renderAuditLogs();
+      showToast('✓ Bitácora limpiada');
+    }
+
+    // =========================================================================
+    // GESTIÓN DE EQUIPO (EXCLUSIVO ADMIN)
+    // =========================================================================
+    async function loadTeamMembers() {
+      if (!isAdmin() || !currentLocal) return;
+      const { data, error } = await db
+        .from('miembros_local')
+        .select('*')
+        .eq('local_id', currentLocal.id)
+        .order('nombre_mostrar');
+
+      if (error) {
+        showToast('Error al cargar equipo: ' + error.message);
+        return;
+      }
+      teamMembers = data || [];
+      renderTeamMembers();
+    }
+
+    function renderTeamMembers() {
+      const list = document.getElementById('team-members-list');
+      if (!list) return;
+      list.innerHTML = '';
+
+      if (teamMembers.length === 0) {
+        list.innerHTML = '<p class="text-xs text-stone-600">No hay integrantes registrados en este local.</p>';
+        return;
+      }
+
+      teamMembers.forEach(m => {
+        const isSelf = m.id === currentMember.id;
+        const row = document.createElement('div');
+        row.className = 'p-3 rounded-xl bg-[#F3EFE4] border border-[#B5AE9E] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5';
+        row.innerHTML = `
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <p class="font-display font-bold text-xs text-stone-900 truncate">${m.nombre_mostrar}</p>
+              ${isSelf ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#065F46]/15 text-[#065F46]">Tú</span>' : ''}
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${m.activo ? 'bg-emerald-800/15 text-emerald-900' : 'bg-stone-300 text-stone-600'}">
+                ${m.activo ? 'Activo' : 'Inactivo'}
+              </span>
+            </div>
+            <p class="text-[10px] font-mono text-stone-500 truncate">${m.user_id}</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 flex-shrink-0">
+            <input
+              type="text"
+              maxlength="8"
+              value="${m.pin_pedido || ''}"
+              placeholder="PIN"
+              onchange="updateMemberPin('${m.id}', this.value)"
+              title="PIN personal para firmar pedidos por QR"
+              class="w-20 px-2.5 py-1.5 bg-[#E6E2D6] border border-[#B5AE9E] rounded-lg text-xs font-mono font-bold text-stone-900 text-center outline-none focus:border-[#065F46]"
+            />
+
+            <select onchange="updateMemberRole('${m.id}', this.value)" ${isSelf ? 'disabled' : ''} class="px-2.5 py-1.5 bg-[#E6E2D6] border border-[#B5AE9E] rounded-lg text-xs font-bold text-stone-900 disabled:opacity-60">
+              <option value="empleado" ${m.rol === 'empleado' ? 'selected' : ''}>Empleado</option>
+              <option value="admin" ${m.rol === 'admin' ? 'selected' : ''}>Admin</option>
+            </select>
+
+            ${!isSelf ? `
+              <button type="button" onclick="toggleMemberActive('${m.id}', ${!m.activo})" class="px-2.5 py-1.5 rounded-lg border text-xs font-bold transition ${m.activo ? 'bg-red-800/15 text-red-900 border-red-900/30 hover:bg-red-800/25' : 'bg-[#065F46] text-[#E6E2D6] border-[#065F46]'}">
+                ${m.activo ? 'Desactivar' : 'Activar'}
+              </button>
+            ` : ''}
+          </div>
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    async function addTeamMember(e) {
+      e.preventDefault();
+      if (!isAdmin()) return;
+
+      const userId = document.getElementById('team-user-id').value.trim();
+      const nombreMostrar = document.getElementById('team-name').value.trim();
+      const pinPedido = document.getElementById('team-pin').value.trim();
+      const rol = document.getElementById('team-role').value;
+
+      const { error } = await db.from('miembros_local').insert({
+        local_id: currentLocal.id,
+        user_id: userId,
+        nombre_mostrar: nombreMostrar,
+        pin_pedido: pinPedido,
+        rol,
+        activo: true
+      });
+
+      if (error) {
+        showToast('Error: ' + error.message);
+        return;
+      }
+
+      e.target.reset();
+      showToast('✓ Integrante y PIN guardados');
+      await loadTeamMembers();
+    }
+
+    async function updateMemberPin(memberId, newPin) {
+      if (!isAdmin()) return;
+      const cleanPin = newPin.trim();
+      if (!cleanPin) {
+        showToast('El PIN no puede quedar vacío');
+        await loadTeamMembers();
+        return;
+      }
+
+      const { error } = await db
+        .from('miembros_local')
+        .update({ pin_pedido: cleanPin })
+        .eq('id', memberId);
+
+      if (error) {
+        showToast('Error al guardar PIN: ' + error.message);
+        return;
+      }
+
+      showToast('✓ PIN actualizado');
+      await loadTeamMembers();
+    }
+
+    async function updateMemberRole(memberId, newRole) {
+      if (!isAdmin()) return;
+      const { error } = await db
+        .from('miembros_local')
+        .update({ rol: newRole })
+        .eq('id', memberId);
+
+      if (error) {
+        showToast('Error: ' + error.message);
+        await loadTeamMembers();
+        return;
+      }
+
+      showToast('✓ Rol actualizado');
+      await loadTeamMembers();
+    }
+
+    async function toggleMemberActive(memberId, nextActive) {
+      if (!isAdmin()) return;
+      const { error } = await db
+        .from('miembros_local')
+        .update({ activo: nextActive })
+        .eq('id', memberId);
+
+      if (error) {
+        showToast('Error: ' + error.message);
+        return;
+      }
+
+      showToast(nextActive ? '✓ Acceso activado' : 'Acceso desactivado');
+      await loadTeamMembers();
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      const params = new URLSearchParams(window.location.search);
+      const qrOrderId = params.get('orden_qr');
+
+      if (qrOrderId) {
+        await initQrCheckoutFlow(qrOrderId);
+        return;
+      }
+
+      const { data: { session } } = await db.auth.getSession();
+      if (session && session.user) {
+        await initSession(session.user);
+      }
+    });
+  </script>
+</body>
+</html>
