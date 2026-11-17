@@ -124,15 +124,13 @@
       transform: scale(1);
     }
 
-    /* Drag & Drop de Categorías/Columnas */
-    .col-drag-over {
-      outline: 2px dashed var(--primary);
-      outline-offset: 2px;
-      background-color: color-mix(in srgb, var(--primary) 8%, var(--bg-surface));
+    /* Carrusel horizontal deslizable en móvil/tablet (estilo Kanban) */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
     }
-    .col-dragging {
-      opacity: 0.55;
-      transform: scale(0.99);
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
     }
   </style>
 </head>
@@ -357,19 +355,14 @@
         </div>
       </div>
 
-      <!-- Selector rápido de Categoría en Móvil / Tablet (estilo Kanban sin deslizar hacia abajo) -->
-      <div id="mobile-category-switcher" class="lg:hidden theme-surface border rounded-2xl p-1.5 space-y-1.5">
-        <div class="flex items-center justify-between px-1.5 pt-0.5">
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted">Vista rápida por categoría</span>
-          <button type="button" id="btn-toggle-all-cols-mobile" onclick="toggleShowAllColumnsMobile()" class="text-[10px] font-bold theme-primary-text underline">
-            Ver todas juntas
-          </button>
-        </div>
+      <!-- Barra superior de navegación rápida entre categorías en celular/tablet (sin scrollear abajo) -->
+      <div id="mobile-category-switcher" class="lg:hidden sticky top-[60px] z-20 theme-surface/95 backdrop-blur-sm border rounded-2xl p-1.5 shadow-xs space-y-1">
         <div id="mobile-category-pills" class="grid grid-cols-3 gap-1"></div>
+        <p class="text-[10px] text-center theme-text-muted">Desliza hacia los lados ◀ ▶ o toca una pestaña para cambiar de categoría</p>
       </div>
 
-      <!-- Contenedor de 3 Columnas Configurables (contraíbles, fijables y reordenables) -->
-      <div id="stock-columns-container" class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start"></div>
+      <!-- Contenedor de 3 Columnas: deslizable hacia los lados en móvil/tablet y 3 columnas en escritorio -->
+      <div id="stock-columns-container" class="flex lg:grid lg:grid-cols-3 gap-4 items-start overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar pb-2"></div>
     </section>
 
     <!-- =================================================================== -->
@@ -966,21 +959,14 @@
     let teamMembers = [];
     let onlyCritical = false;
 
-    // Configuración de las 3 columnas de Stock (orden global, fijado arriba y nombres sincronizados para todos)
+    // Configuración de las 3 columnas/categorías de Stock (nombres sincronizados para todos)
     const DEFAULT_COLUMNS = ['Barra / Café', 'Cocina / Insumos', 'Bodega / Desechables'];
-    // Cada objeto representa una categoría con su id estable (1, 2, 3), nombre y si está fijada arriba/primero
-    let stockColumnsConfig = [
-      { id: 1, name: DEFAULT_COLUMNS[0], pinned: false },
-      { id: 2, name: DEFAULT_COLUMNS[1], pinned: false },
-      { id: 3, name: DEFAULT_COLUMNS[2], pinned: false }
-    ];
     let stockColumns = [...DEFAULT_COLUMNS];
     let collapsedColumnIds = new Set();
     let activeMobileCategoryId = 1;
-    let showAllColumnsOnMobile = false;
-    let draggedColumnId = null;
+    let isProgrammaticCarouselScroll = false;
 
-    // Metadatos por producto (paquetes, modo %, columna asignada) con respaldo instantáneo local + BD
+    // Metadatos por producto (paquetes, modo %, columna asignada, fijado) con respaldo local + BD
     let productMetaCache = {};
 
     // Estado de modales
@@ -997,11 +983,11 @@
     let pollingIntervalId = null;
     let syncDebounceTimer = null;
     let isSyncingNow = false;
-    const pendingStockMutations = new Map(); // Evita parpadeos mientras se confirma cada resta en BD
+    const pendingStockMutations = new Map();
     const POLLING_INTERVAL_MS = 8000;
 
     // =========================================================================
-    // HELPERS DE METADATOS DE PRODUCTO (PAQUETES, PORCENTAJE %, COLUMNA)
+    // HELPERS DE METADATOS DE PRODUCTO (PAQUETES, PORCENTAJE %, COLUMNA, FIJADO)
     // =========================================================================
     function getMetaStorageKey() {
       return currentLocal?.id ? `tacita_prod_meta_${currentLocal.id}` : 'tacita_prod_meta_default';
@@ -1037,25 +1023,51 @@
         ? Number(prod.columna_stock)
         : ([1, 2, 3].includes(Number(localM.columna_stock)) ? Number(localM.columna_stock) : 1);
 
-      return { isPercent, packEnabled, packSize, colIndex };
+      const pinned = prod.fijado !== undefined && prod.fijado !== null
+        ? Boolean(prod.fijado)
+        : Boolean(localM.fijado);
+
+      return { isPercent, packEnabled, packSize, colIndex, pinned };
     }
 
     function setProductMeta(prodId, meta) {
+      const prev = productMetaCache[prodId] || {};
       productMetaCache[prodId] = {
-        es_porcentaje: Boolean(meta.isPercent),
-        paquete_activo: Boolean(meta.packEnabled),
-        unidades_por_paquete: Math.max(2, Number(meta.packSize) || 6),
-        columna_stock: [1, 2, 3].includes(Number(meta.colIndex)) ? Number(meta.colIndex) : 1
+        es_porcentaje: meta.isPercent !== undefined ? Boolean(meta.isPercent) : Boolean(prev.es_porcentaje),
+        paquete_activo: meta.packEnabled !== undefined ? Boolean(meta.packEnabled) : Boolean(prev.paquete_activo),
+        unidades_por_paquete: meta.packSize !== undefined ? Math.max(2, Number(meta.packSize) || 6) : (prev.unidades_por_paquete || 6),
+        columna_stock: [1, 2, 3].includes(Number(meta.colIndex)) ? Number(meta.colIndex) : (prev.columna_stock || 1),
+        fijado: meta.pinned !== undefined ? Boolean(meta.pinned) : Boolean(prev.fijado)
       };
       saveLocalProductMeta();
     }
 
-    // Cálculo de reposición sugerida (Unidades, Paquetes o Porcentaje %)
+    async function togglePinProduct(productId) {
+      const prod = products.find(p => p.id === productId);
+      if (!prod) return;
+
+      const meta = getProductMeta(prod);
+      const nextPinned = !meta.pinned;
+
+      prod.fijado = nextPinned;
+      setProductMeta(productId, { ...meta, pinned: nextPinned });
+      renderProducts();
+      showToast(nextPinned ? `📌 "${prod.nombre}" fijado arriba para todos` : `Desfijado "${prod.nombre}"`);
+
+      const { error } = await db
+        .from('productos')
+        .update({ fijado: nextPinned })
+        .eq('id', productId);
+
+      if (error) {
+        showToast('Fijado localmente (agrega columna "fijado" en SQL para sincronizar)');
+      }
+    }
+
     function computeSuggestedOrder(prod) {
       const meta = getProductMeta(prod);
 
       if (meta.isPercent) {
-        // Producto por % (siempre es 1 envase grande; si está en o bajo umbral se pide 1 unidad)
         return {
           qty: 1,
           unitLabel: prod.unidad || 'unid.',
@@ -1066,7 +1078,6 @@
       const missingUnits = Math.max(1, prod.stock_maximo - prod.stock_actual);
 
       if (meta.packEnabled && meta.packSize > 1) {
-        // Ej: 10 restantes, ideal 18 -> faltan 8 -> 8 / 6 = 1.33 -> redondea a 1 paquete (6 unid.)
         const packs = Math.max(1, Math.round(missingUnits / meta.packSize));
         return {
           qty: packs,
@@ -1089,62 +1100,17 @@
       return currentLocal?.id ? `tacita_cols_${currentLocal.id}` : 'tacita_cols_default';
     }
 
-    function normalizeColumnsConfig(rawData) {
-      // Soporta tanto arreglo de strings ["A","B","C"] como arreglo de objetos [{id:1,name:"A",pinned:true},...]
-      const base = [
-        { id: 1, name: DEFAULT_COLUMNS[0], pinned: false },
-        { id: 2, name: DEFAULT_COLUMNS[1], pinned: false },
-        { id: 3, name: DEFAULT_COLUMNS[2], pinned: false }
-      ];
-      if (!Array.isArray(rawData) || rawData.length !== 3) return base;
-
+    function parseColumnNamesFromSource(rawData) {
+      if (!Array.isArray(rawData) || rawData.length !== 3) return [...DEFAULT_COLUMNS];
       if (typeof rawData[0] === 'string') {
-        return rawData.map((nm, i) => ({
-          id: i + 1,
-          name: String(nm || DEFAULT_COLUMNS[i]).trim() || DEFAULT_COLUMNS[i],
-          pinned: false
-        }));
+        return rawData.map((nm, i) => String(nm || DEFAULT_COLUMNS[i]).trim() || DEFAULT_COLUMNS[i]);
       }
-
-      const seen = new Set();
-      const normalized = [];
+      const res = [...DEFAULT_COLUMNS];
       rawData.forEach((item, idx) => {
         const cid = [1, 2, 3].includes(Number(item?.id)) ? Number(item.id) : (idx + 1);
-        if (!seen.has(cid)) {
-          seen.add(cid);
-          normalized.push({
-            id: cid,
-            name: String(item?.name || DEFAULT_COLUMNS[cid - 1]).trim() || DEFAULT_COLUMNS[cid - 1],
-            pinned: Boolean(item?.pinned)
-          });
-        }
+        res[cid - 1] = String(item?.name || DEFAULT_COLUMNS[cid - 1]).trim() || DEFAULT_COLUMNS[cid - 1];
       });
-      [1, 2, 3].forEach(cid => {
-        if (!seen.has(cid)) {
-          normalized.push({ id: cid, name: DEFAULT_COLUMNS[cid - 1], pinned: false });
-        }
-      });
-      return normalized;
-    }
-
-    function getOrderedColumnsConfig() {
-      // Las categorías fijadas (pinned) siempre van primero/arriba en su orden relativo; luego las no fijadas
-      const pinned = stockColumnsConfig.filter(c => c.pinned);
-      const unpinned = stockColumnsConfig.filter(c => !c.pinned);
-      return [...pinned, ...unpinned];
-    }
-
-    function syncFlatColumnNamesArray() {
-      [1, 2, 3].forEach(cid => {
-        const found = stockColumnsConfig.find(c => c.id === cid);
-        stockColumns[cid - 1] = found ? found.name : DEFAULT_COLUMNS[cid - 1];
-      });
-      const c1 = document.getElementById('col-name-1');
-      const c2 = document.getElementById('col-name-2');
-      const c3 = document.getElementById('col-name-3');
-      if (c1) c1.value = stockColumns[0];
-      if (c2) c2.value = stockColumns[1];
-      if (c3) c3.value = stockColumns[2];
+      return res;
     }
 
     function loadStockColumns() {
@@ -1159,82 +1125,42 @@
           source = null;
         }
       }
-      stockColumnsConfig = normalizeColumnsConfig(source);
-      syncFlatColumnNamesArray();
+      stockColumns = parseColumnNamesFromSource(source);
 
-      const ordered = getOrderedColumnsConfig();
-      if (!ordered.some(c => c.id === activeMobileCategoryId) && ordered.length > 0) {
-        activeMobileCategoryId = ordered[0].id;
-      }
-    }
-
-    async function persistColumnsConfigToCloud(toastMsg = null) {
-      stockColumnsConfig = getOrderedColumnsConfig();
-      syncFlatColumnNamesArray();
-      localStorage.setItem(getColumnsStorageKey(), JSON.stringify(stockColumnsConfig));
-      if (currentLocal) {
-        currentLocal.columnas_stock = stockColumnsConfig;
-      }
-      renderProducts();
-
-      if (currentLocal?.id) {
-        const { error } = await db
-          .from('locales')
-          .update({ columnas_stock: stockColumnsConfig })
-          .eq('id', currentLocal.id);
-        if (error && toastMsg) {
-          showToast('Guardado local (ejecuta el SQL de locales para sincronizar)');
-          return;
-        }
-      }
-      if (toastMsg) showToast(toastMsg);
+      const c1 = document.getElementById('col-name-1');
+      const c2 = document.getElementById('col-name-2');
+      const c3 = document.getElementById('col-name-3');
+      if (c1) c1.value = stockColumns[0];
+      if (c2) c2.value = stockColumns[1];
+      if (c3) c3.value = stockColumns[2];
     }
 
     async function saveColumnNames(e) {
       e.preventDefault();
       if (!isAdmin()) return;
 
-      const namesById = {
-        1: document.getElementById('col-name-1').value.trim() || DEFAULT_COLUMNS[0],
-        2: document.getElementById('col-name-2').value.trim() || DEFAULT_COLUMNS[1],
-        3: document.getElementById('col-name-3').value.trim() || DEFAULT_COLUMNS[2]
-      };
+      const c1 = document.getElementById('col-name-1').value.trim() || DEFAULT_COLUMNS[0];
+      const c2 = document.getElementById('col-name-2').value.trim() || DEFAULT_COLUMNS[1];
+      const c3 = document.getElementById('col-name-3').value.trim() || DEFAULT_COLUMNS[2];
+      stockColumns = [c1, c2, c3];
 
-      stockColumnsConfig = stockColumnsConfig.map(c => ({
-        ...c,
-        name: namesById[c.id] || c.name
-      }));
-
-      await persistColumnsConfigToCloud('✓ Nombres de categorías actualizados para todos');
-    }
-
-    async function togglePinCategory(colId) {
-      const target = stockColumnsConfig.find(c => c.id === colId);
-      if (!target) return;
-      target.pinned = !target.pinned;
-      if (target.pinned) {
-        activeMobileCategoryId = colId;
+      localStorage.setItem(getColumnsStorageKey(), JSON.stringify(stockColumns));
+      if (currentLocal) {
+        currentLocal.columnas_stock = stockColumns;
       }
-      await persistColumnsConfigToCloud(
-        target.pinned ? `📌 "${target.name}" fijada arriba para todos` : `Desfijada "${target.name}"`
-      );
-    }
+      renderProducts();
 
-    async function moveCategoryOrder(colId, direction) {
-      const ordered = getOrderedColumnsConfig();
-      const idx = ordered.findIndex(c => c.id === colId);
-      const targetIdx = idx + direction;
-      if (idx < 0 || targetIdx < 0 || targetIdx >= ordered.length) return;
-
-      // Solo intercambiar dentro del mismo grupo (fijadas entre sí o normales entre sí)
-      if (ordered[idx].pinned !== ordered[targetIdx].pinned) return;
-
-      const temp = ordered[idx];
-      ordered[idx] = ordered[targetIdx];
-      ordered[targetIdx] = temp;
-      stockColumnsConfig = ordered;
-
-      await persistColumnsConfigToCloud('✓ Orden de categorías actualizado para todos');
+      if (currentLocal?.id) {
+        const { error } = await db
+          .from('locales')
+          .update({ columnas_stock: stockColumns })
+          .eq('id', currentLocal.id);
+        if (error) {
+          showToast('Guardado local (falta permiso SQL en tabla locales)');
+          return;
+        }
+      }
+      showToast('✓ Nombres de categorías actualizados para todos');
     }
 
     function toggleCollapseCategory(colId) {
@@ -1246,61 +1172,51 @@
       renderProducts();
     }
 
-    function selectMobileCategory(colId) {
-      activeMobileCategoryId = colId;
-      showAllColumnsOnMobile = false;
-      collapsedColumnIds.delete(colId);
-      renderProducts();
-    }
+    function updateMobileCategoryPillsUI() {
+      const pillsContainer = document.getElementById('mobile-category-pills');
+      if (!pillsContainer) return;
+      const search = (document.getElementById('stock-search')?.value || '').toLowerCase();
+      const filtered = products.filter(p => {
+        const matchText = p.nombre.toLowerCase().includes(search);
+        const matchCrit = !onlyCritical || p.stock_actual <= p.stock_minimo;
+        return matchText && matchCrit;
+      });
 
-    function toggleShowAllColumnsMobile() {
-      showAllColumnsOnMobile = !showAllColumnsOnMobile;
-      renderProducts();
-    }
-
-    function handleColDragStart(e, colId) {
-      draggedColumnId = colId;
-      e.currentTarget.classList.add('col-dragging');
-      if (e.dataTransfer) {
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', String(colId));
-      }
-    }
-
-    function handleColDragEnd(e) {
-      draggedColumnId = null;
-      document.querySelectorAll('.col-drag-over, .col-dragging').forEach(el => {
-        el.classList.remove('col-drag-over', 'col-dragging');
+      pillsContainer.innerHTML = '';
+      [1, 2, 3].forEach(colId => {
+        const count = filtered.filter(p => getProductMeta(p).colIndex === colId).length;
+        const isActive = activeMobileCategoryId === colId;
+        const pill = document.createElement('button');
+        pill.type = 'button';
+        pill.onclick = () => scrollToMobileCategory(colId);
+        pill.className = isActive
+          ? 'py-2 px-2 rounded-xl text-[11px] font-bold theme-primary-bg transition flex items-center justify-center gap-1 min-w-0 shadow-xs'
+          : 'py-2 px-2 rounded-xl text-[11px] font-bold theme-input theme-text-main border transition flex items-center justify-center gap-1 min-w-0 hover:opacity-85';
+        pill.innerHTML = `
+          <span class="truncate">${stockColumns[colId - 1]}</span>
+          <span class="text-[9px] opacity-80">(${count})</span>
+        `;
+        pillsContainer.appendChild(pill);
       });
     }
 
-    function handleColDragOver(e) {
-      e.preventDefault();
-      e.currentTarget.classList.add('col-drag-over');
-    }
+    function scrollToMobileCategory(colId) {
+      activeMobileCategoryId = colId;
+      collapsedColumnIds.delete(colId);
+      updateMobileCategoryPillsUI();
 
-    function handleColDragLeave(e) {
-      e.currentTarget.classList.remove('col-drag-over');
-    }
-
-    async function handleColDrop(e, targetColId) {
-      e.preventDefault();
-      e.currentTarget.classList.remove('col-drag-over');
-      const sourceId = draggedColumnId || Number(e.dataTransfer?.getData('text/plain'));
-      if (!sourceId || sourceId === targetColId) return;
-
-      const ordered = getOrderedColumnsConfig();
-      const fromIdx = ordered.findIndex(c => c.id === sourceId);
-      const toIdx = ordered.findIndex(c => c.id === targetColId);
-      if (fromIdx < 0 || toIdx < 0) return;
-
-      // Si suelta sobre una categoría fijada, hereda estado fijado; si suelta sobre normal, queda normal
-      const [moved] = ordered.splice(fromIdx, 1);
-      moved.pinned = ordered[toIdx] ? ordered[toIdx].pinned : moved.pinned;
-      ordered.splice(toIdx, 0, moved);
-      stockColumnsConfig = ordered;
-
-      await persistColumnsConfigToCloud('✓ Orden de categorías guardado para todos');
+      const container = document.getElementById('stock-columns-container');
+      const targetCard = document.getElementById(`stock-col-card-${colId}`);
+      if (container && targetCard) {
+        isProgrammaticCarouselScroll = true;
+        container.scrollTo({
+          left: targetCard.offsetLeft - container.offsetLeft,
+          behavior: 'smooth'
+        });
+        setTimeout(() => {
+          isProgrammaticCarouselScroll = false;
+        }, 420);
+      }
     }
 
     // =========================================================================
@@ -1719,7 +1635,6 @@
 
         if (results[0].data) providers = results[0].data;
         if (results[1].data) {
-          // Respetar mutaciones optimistas aún en vuelo para que las restas rápidas nunca retrocedan
           products = results[1].data.map(row => {
             if (pendingStockMutations.has(row.id)) {
               return { ...row, stock_actual: pendingStockMutations.get(row.id) };
@@ -1787,12 +1702,10 @@
     }
 
     // =========================================================================
-    // RENDER EN 3 COLUMNAS + SELECTOR KANBAN RÁPIDO + CONTRAÍBLE + FIJABLE
+    // RENDER EN 3 COLUMNAS DESLIZABLES (MÓVIL) + CATEGORÍAS CONTRAÍBLES + FIJAR PRODUCTOS
     // =========================================================================
     function renderProducts() {
       const container = document.getElementById('stock-columns-container');
-      const pillsContainer = document.getElementById('mobile-category-pills');
-      const toggleAllMobileBtn = document.getElementById('btn-toggle-all-cols-mobile');
       const search = (document.getElementById('stock-search').value || '').toLowerCase();
       const criticalCount = products.filter(p => p.stock_actual <= p.stock_minimo).length;
       const adminActive = isAdmin();
@@ -1811,83 +1724,37 @@
         return matchText && matchCrit;
       });
 
-      const orderedCols = getOrderedColumnsConfig();
-      if (!orderedCols.some(c => c.id === activeMobileCategoryId) && orderedCols.length > 0) {
-        activeMobileCategoryId = orderedCols[0].id;
-      }
+      updateMobileCategoryPillsUI();
 
-      // Renderizar pestañas rápidas en móvil/tablet (estilo Kanban)
-      if (pillsContainer) {
-        pillsContainer.innerHTML = '';
-        orderedCols.forEach(colCfg => {
-          const count = filtered.filter(p => getProductMeta(p).colIndex === colCfg.id).length;
-          const isActivePill = !showAllColumnsOnMobile && activeMobileCategoryId === colCfg.id;
-          const pill = document.createElement('button');
-          pill.type = 'button';
-          pill.onclick = () => selectMobileCategory(colCfg.id);
-          pill.className = isActivePill
-            ? 'py-2 px-2 rounded-xl text-[11px] font-bold theme-primary-bg transition flex items-center justify-center gap-1 min-w-0 shadow-xs'
-            : 'py-2 px-2 rounded-xl text-[11px] font-bold theme-input theme-text-main border transition flex items-center justify-center gap-1 min-w-0 hover:opacity-85';
-          pill.innerHTML = `
-            ${colCfg.pinned ? '<span class="text-[10px]">📌</span>' : ''}
-            <span class="truncate">${colCfg.name}</span>
-            <span class="text-[9px] opacity-80">(${count})</span>
-          `;
-          pillsContainer.appendChild(pill);
-        });
-      }
-
-      if (toggleAllMobileBtn) {
-        toggleAllMobileBtn.textContent = showAllColumnsOnMobile ? 'Vista por pestaña' : 'Ver todas juntas';
-      }
-
+      const prevScrollLeft = container ? container.scrollLeft : 0;
       container.innerHTML = '';
 
-      orderedCols.forEach((colCfg, indexInOrdered) => {
-        const colIdx = colCfg.id;
-        const colTitle = colCfg.name;
-        const colProducts = filtered.filter(p => getProductMeta(p).colIndex === colIdx);
+      [1, 2, 3].forEach(colIdx => {
+        const colTitle = stockColumns[colIdx - 1] || DEFAULT_COLUMNS[colIdx - 1];
+        const colProducts = filtered
+          .filter(p => getProductMeta(p).colIndex === colIdx)
+          .sort((a, b) => {
+            const pinA = getProductMeta(a).pinned ? 1 : 0;
+            const pinB = getProductMeta(b).pinned ? 1 : 0;
+            if (pinA !== pinB) return pinB - pinA;
+            return a.nombre.localeCompare(b.nombre, 'es');
+          });
+
         const isCollapsed = collapsedColumnIds.has(colIdx);
 
-        // En móvil/tablet: si no está en modo "Ver todas juntas" ni buscando texto, mostrar solo la pestaña activa
-        const hiddenOnMobile = !showAllColumnsOnMobile && !search && activeMobileCategoryId !== colIdx;
-
-        // Verificar si puede moverse izquierda/arriba o derecha/abajo dentro de su grupo (fijadas vs normales)
-        const canMovePrev = indexInOrdered > 0 && orderedCols[indexInOrdered - 1].pinned === colCfg.pinned;
-        const canMoveNext = indexInOrdered < orderedCols.length - 1 && orderedCols[indexInOrdered + 1].pinned === colCfg.pinned;
-
         const colWrap = document.createElement('div');
-        colWrap.draggable = true;
-        colWrap.ondragstart = (e) => handleColDragStart(e, colIdx);
-        colWrap.ondragend = handleColDragEnd;
-        colWrap.ondragover = handleColDragOver;
-        colWrap.ondragleave = handleColDragLeave;
-        colWrap.ondrop = (e) => handleColDrop(e, colIdx);
-
-        colWrap.className = `${hiddenOnMobile ? 'hidden lg:block' : ''} theme-surface border ${colCfg.pinned ? 'border-current/30 ring-1 ring-emerald-700/20' : ''} rounded-2xl p-3 sm:p-3.5 space-y-2.5 shadow-xs transition-all`;
+        colWrap.id = `stock-col-card-${colIdx}`;
+        colWrap.className = 'w-full min-w-full sm:min-w-[85%] lg:min-w-0 snap-center flex-shrink-0 theme-surface border rounded-2xl p-3 sm:p-3.5 space-y-2.5 shadow-xs transition-all';
         colWrap.innerHTML = `
-          <div class="flex items-center justify-between gap-1.5 ${isCollapsed ? '' : 'pb-2 border-b theme-border'} px-1 select-none">
-            <button type="button" onclick="toggleCollapseCategory(${colIdx})" class="flex items-center gap-1.5 min-w-0 flex-1 text-left group" title="${isCollapsed ? 'Expandir categoría' : 'Contraer categoría'}">
+          <div class="flex items-center justify-between gap-2 ${isCollapsed ? '' : 'pb-2 border-b theme-border'} px-1 select-none">
+            <button type="button" onclick="toggleCollapseCategory(${colIdx})" class="flex items-center gap-2 min-w-0 flex-1 text-left group" title="${isCollapsed ? 'Expandir categoría' : 'Contraer categoría'}">
               <span class="text-xs theme-text-muted font-bold w-4 text-center">${isCollapsed ? '▸' : '▾'}</span>
               <h2 class="font-display font-extrabold text-xs sm:text-sm theme-text-main truncate group-hover:opacity-80">${colTitle}</h2>
               <span class="text-[10px] font-bold px-2 py-0.5 rounded-full theme-primary-badge flex-shrink-0">${colProducts.length}</span>
             </button>
-
-            <div class="flex items-center gap-1 flex-shrink-0">
-              ${canMovePrev ? `
-                <button type="button" onclick="moveCategoryOrder(${colIdx}, -1)" title="Mover categoría antes (para todos)" class="w-6 h-6 rounded-lg theme-input border text-[10px] font-bold theme-text-muted hover:theme-text-main flex items-center justify-center">
-                  ◀
-                </button>
-              ` : ''}
-              ${canMoveNext ? `
-                <button type="button" onclick="moveCategoryOrder(${colIdx}, 1)" title="Mover categoría después (para todos)" class="w-6 h-6 rounded-lg theme-input border text-[10px] font-bold theme-text-muted hover:theme-text-main flex items-center justify-center">
-                  ▶
-                </button>
-              ` : ''}
-              <button type="button" onclick="togglePinCategory(${colIdx})" title="${colCfg.pinned ? 'Desfijar categoría' : 'Fijar categoría al inicio para todos'}" class="px-2 py-1 rounded-lg border text-[10px] font-bold transition ${colCfg.pinned ? 'theme-primary-bg border-transparent' : 'theme-input theme-text-muted hover:opacity-85'}">
-                📌${colCfg.pinned ? ' Fijada' : ''}
-              </button>
-            </div>
+            <button type="button" onclick="toggleCollapseCategory(${colIdx})" class="text-[10px] font-bold theme-text-muted hover:theme-text-main px-2 py-1 rounded-lg theme-input border">
+              ${isCollapsed ? 'Mostrar' : 'Contraer'}
+            </button>
           </div>
           <div class="${isCollapsed ? 'hidden' : 'space-y-2.5'}" id="stock-col-body-${colIdx}"></div>
         `;
@@ -1895,7 +1762,7 @@
 
         const colBody = colWrap.querySelector(`#stock-col-body-${colIdx}`);
         if (colProducts.length === 0) {
-          colBody.innerHTML = '<div class="p-4 text-center rounded-xl border border-dashed theme-border text-[11px] theme-text-muted">Sin productos en esta columna.</div>';
+          colBody.innerHTML = '<div class="p-4 text-center rounded-xl border border-dashed theme-border text-[11px] theme-text-muted">Sin productos en esta categoría.</div>';
           return;
         }
 
@@ -1907,7 +1774,6 @@
             ? Math.max(0, Math.min(100, Number(p.stock_actual) || 0))
             : computeStockBarPercent(p.stock_actual, p.stock_minimo, p.stock_maximo);
 
-          // Etiqueta de cantidad (Unidades, Paquetes visuales o %)
           let stockBadgeText = `${p.stock_actual} ${p.unidad}`;
           let subDetailText = `${prov ? prov.nombre : 'Sin prov.'} • Mín: ${p.stock_minimo} • Ideal: ${p.stock_maximo}`;
 
@@ -1926,17 +1792,23 @@
 
           const card = document.createElement('div');
           card.id = `prod-card-${p.id}`;
-          card.className = `theme-input border ${isCritical ? 'border-red-700/75' : ''} rounded-xl p-3 space-y-2.5 transition-colors`;
+          card.className = `theme-input border ${isCritical ? 'border-red-700/75' : (meta.pinned ? 'border-current/35 ring-1 ring-emerald-700/20' : '')} rounded-xl p-3 space-y-2.5 transition-colors`;
           card.innerHTML = `
             <div class="flex items-start justify-between gap-2">
               <div class="min-w-0">
-                <h3 class="font-display font-bold text-xs sm:text-sm theme-text-main truncate">${p.nombre}</h3>
+                <div class="flex items-center gap-1.5">
+                  ${meta.pinned ? '<span class="text-[11px]" title="Fijado arriba">📌</span>' : ''}
+                  <h3 class="font-display font-bold text-xs sm:text-sm theme-text-main truncate">${p.nombre}</h3>
+                </div>
                 <p class="text-[10px] theme-text-muted truncate">${subDetailText}</p>
               </div>
               <div class="flex items-center gap-1 flex-shrink-0">
                 <span id="prod-badge-${p.id}" class="text-[11px] font-extrabold px-2 py-0.5 rounded-lg ${isCritical ? 'bg-red-700/20 text-red-600' : 'bg-emerald-700/20 text-emerald-600'}">
                   ${stockBadgeText}
                 </span>
+                <button type="button" onclick="togglePinProduct('${p.id}')" title="${meta.pinned ? 'Desfijar producto' : 'Fijar producto arriba para todos'}" class="px-1.5 py-0.5 rounded-lg border text-[11px] font-bold transition ${meta.pinned ? 'theme-primary-bg border-transparent' : 'theme-surface theme-text-muted hover:opacity-80'}">
+                  📌
+                </button>
                 ${adminActive ? `
                   <button type="button" onclick="openEditProductModal('${p.id}')" title="Editar producto y stock" class="px-1.5 py-0.5 rounded-lg theme-surface hover:opacity-80 border text-[11px] font-bold transition">
                     ✏️
@@ -1963,6 +1835,10 @@
           colBody.appendChild(card);
         });
       });
+
+      if (container && prevScrollLeft > 0) {
+        container.scrollLeft = prevScrollLeft;
+      }
     }
 
     // Actualización Optimista Instantánea (0 ms de espera visual al tocar -1 / +1)
@@ -1984,13 +1860,11 @@
 
       if (optimisticStock === prevStock) return;
 
-      // 1. Actualizar estado en memoria y UI inmediatamente (cero latencia)
       prod.stock_actual = optimisticStock;
       pendingStockMutations.set(productId, optimisticStock);
       renderProducts();
       showToast(meta.isPercent ? `${prod.nombre}: ${optimisticStock}%` : `${prod.nombre}: ${optimisticStock} ${prod.unidad}`);
 
-      // 2. Enviar RPC en segundo plano sin bloquear el siguiente toque
       const { data: serverStock, error } = await db.rpc('ajustar_stock', {
         p_producto_id: productId,
         p_delta: delta,
@@ -1998,7 +1872,6 @@
       });
 
       if (error) {
-        // Revertir solo si falló en el servidor
         pendingStockMutations.delete(productId);
         prod.stock_actual = prevStock;
         renderProducts();
@@ -2006,7 +1879,6 @@
         return;
       }
 
-      // Confirmar valor oficial cuando ya no hay más clics pendientes encima
       if (pendingStockMutations.get(productId) === optimisticStock) {
         pendingStockMutations.delete(productId);
         if (typeof serverStock === 'number') {
@@ -2142,14 +2014,14 @@
         return;
       }
 
-      // Guardar columna y modo % en caché local y opcionalmente en columnas de BD si existen
       if (Array.isArray(insertedRows)) {
         insertedRows.forEach(r => {
           setProductMeta(r.id, {
             isPercent,
             packEnabled: false,
             packSize: 6,
-            colIndex
+            colIndex,
+            pinned: false
           });
         });
         const ids = insertedRows.map(r => r.id);
@@ -2157,7 +2029,8 @@
           columna_stock: colIndex,
           es_porcentaje: isPercent,
           paquete_activo: false,
-          unidades_por_paquete: 6
+          unidades_por_paquete: 6,
+          fijado: false
         }).in('id', ids);
       }
 
@@ -2264,7 +2137,8 @@
         return;
       }
 
-      setProductMeta(id, { isPercent, packEnabled, packSize, colIndex });
+      const prevMeta = getProductMeta(prod);
+      setProductMeta(id, { isPercent, packEnabled, packSize, colIndex, pinned: prevMeta.pinned });
       await db.from('productos').update({
         columna_stock: colIndex,
         es_porcentaje: isPercent,
@@ -3107,12 +2981,10 @@
       await loadAllData(false);
     }
 
-    // Marcar recibido soportando unidades, paquetes y reposición 100%
     async function markOrderReceived(orderId) {
       const order = orders.find(o => o.id === orderId);
       if (!order || order.estado !== 'pendiente') return;
 
-      // Preparar ítems con unidades_reales calculadas para productos por paquete o %
       const normalizedItems = (order.items || []).map(item => {
         const prod = products.find(p => p.id === item.producto_id);
         if (!prod) return item;
@@ -3129,7 +3001,6 @@
         return item;
       });
 
-      // Si algún ítem venía en paquetes o %, actualizamos temporalmente la cantidad real antes de llamar recibir_pedido
       const needsNormalization = normalizedItems.some((it, idx) => it.cantidad !== order.items[idx]?.cantidad);
       if (needsNormalization) {
         await db.from('pedidos').update({ items: normalizedItems }).eq('id', orderId);
@@ -3227,7 +3098,7 @@
     }
 
     function getMondayOfCurrentWeekChile(chileNow) {
-      const day = chileNow.getDay(); // 0=Dom, 1=Lun, ..., 6=Sab
+      const day = chileNow.getDay();
       const diffToMonday = day === 0 ? -6 : (1 - day);
       const monday = new Date(chileNow);
       monday.setDate(chileNow.getDate() + diffToMonday);
@@ -3244,7 +3115,6 @@
       const chileNow = getChileNow();
       const banner = document.getElementById('saturday-official-banner');
       if (!banner) return;
-      // Si es sábado desde las 10:00 AM en adelante en Chile
       if (chileNow.getDay() === 6 && chileNow.getHours() >= 10) {
         banner.classList.remove('hidden');
       } else {
@@ -3258,7 +3128,6 @@
       const chileNow = getChileNow();
       const mondayStart = getMondayOfCurrentWeekChile(chileNow);
 
-      // Si es sábado >= 10:00 AM Chile, el corte oficial cierra el sábado a las 10:00 AM; si no, hasta el instante actual
       let periodEnd = new Date(chileNow);
       let isOfficialSaturdayCut = false;
       if (chileNow.getDay() === 6 && chileNow.getHours() >= 10) {
@@ -3270,7 +3139,6 @@
       const startIso = mondayStart.toISOString();
       const endIso = periodEnd.toISOString();
 
-      // Consultar movimientos y pedidos completos de la semana desde Supabase
       const [movRes, pedRes] = await Promise.all([
         db.from('movimientos_stock')
           .select('*')
@@ -3289,7 +3157,6 @@
       const weekMovs = movRes.data || [];
       const weekOrders = pedRes.data || [];
 
-      // 1. Stocks usados (consumos delta < 0) y stocks repuestos (delta > 0)
       const usedByProd = {};
       const restockedByProd = {};
       let totalUsedUnits = 0;
@@ -3315,7 +3182,6 @@
         }
       });
 
-      // 2. Productos repuestos en MÁS DE 1 ocasión (vía pedidos recibidos o ingresos de stock)
       const restockFrequency = {};
       weekOrders.filter(o => o.estado === 'recibido').forEach(o => {
         (o.items || []).forEach(it => {
@@ -3326,7 +3192,6 @@
         });
       });
 
-      // Complementar con ingresos múltiples en bitácora si no pasaron por orden
       Object.values(restockedByProd).forEach(r => {
         if (!restockFrequency[r.name]) {
           restockFrequency[r.name] = { name: r.name, times: r.events, totalQty: r.total };
@@ -3367,7 +3232,6 @@
             </button>
           </div>
 
-          <!-- KPIs principales -->
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <div class="p-3 rounded-xl theme-input border">
               <p class="text-[10px] font-bold uppercase theme-text-muted">Pedidos Realizados</p>
@@ -3391,7 +3255,6 @@
             </div>
           </div>
 
-          <!-- Productos repuestos en más de 1 ocasión -->
           <div class="space-y-2">
             <h3 class="font-display text-xs font-extrabold uppercase tracking-wider theme-primary-text">
               🔁 Productos Repuestos en Más de 1 Ocasión
@@ -3409,7 +3272,6 @@
             }
           </div>
 
-          <!-- Detalle Usado vs Repuesto -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
             <div class="space-y-2">
               <h3 class="font-display text-xs font-extrabold uppercase tracking-wider text-red-600">
@@ -3713,6 +3575,35 @@
       if (qrOrderId) {
         await initQrCheckoutFlow(qrOrderId);
         return;
+      }
+
+      const stockContainer = document.getElementById('stock-columns-container');
+      if (stockContainer) {
+        let swipeSyncTimeout = null;
+        stockContainer.addEventListener('scroll', () => {
+          if (isProgrammaticCarouselScroll) return;
+          if (swipeSyncTimeout) clearTimeout(swipeSyncTimeout);
+          swipeSyncTimeout = setTimeout(() => {
+            const containerCenter = stockContainer.scrollLeft + stockContainer.clientWidth / 2;
+            let closestId = activeMobileCategoryId;
+            let minDist = Infinity;
+            [1, 2, 3].forEach(cid => {
+              const el = document.getElementById(`stock-col-card-${cid}`);
+              if (el) {
+                const elCenter = (el.offsetLeft - stockContainer.offsetLeft) + el.offsetWidth / 2;
+                const dist = Math.abs(containerCenter - elCenter);
+                if (dist < minDist) {
+                  minDist = dist;
+                  closestId = cid;
+                }
+              }
+            });
+            if (closestId !== activeMobileCategoryId) {
+              activeMobileCategoryId = closestId;
+              updateMobileCategoryPillsUI();
+            }
+          }, 90);
+        }, { passive: true });
       }
 
       const { data: { session } } = await db.auth.getSession();
