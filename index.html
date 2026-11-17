@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="es" class="scroll-smooth">
+<html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Stock Tacita de Café</title>
   <link id="dynamic-favicon" rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23065F46'/><text x='50' y='68' font-size='58' text-anchor='middle'>☕</text></svg>" />
   <script src="https://cdn.tailwindcss.com"></script>
@@ -24,15 +24,30 @@
       --primary-hover: color-mix(in srgb, var(--primary) 86%, black);
     }
 
+    html, body {
+      touch-action: manipulation;
+      -webkit-text-size-adjust: 100%;
+    }
+
     body {
       font-family: 'Inter', sans-serif;
       background-color: var(--bg-page);
       color: var(--text-main);
-      transition: background-color 0.2s ease, color 0.2s ease;
+      transition: background-color 0.18s ease, color 0.18s ease;
     }
 
     h1, h2, h3, h4, .font-display {
       font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    /* Evita zoom automático en iOS/iPadOS al tocar inputs/selects */
+    input, select, textarea {
+      font-size: 16px !important;
+    }
+    @media (min-width: 768px) {
+      input, select, textarea {
+        font-size: 13px !important;
+      }
     }
 
     /* Clases temáticas conectadas a variables CSS */
@@ -87,57 +102,57 @@
       place-content: center;
       cursor: pointer;
       flex-shrink: 0;
-      transition: all 0.16s ease;
+      transition: all 0.14s ease;
     }
     .custom-chk:hover {
       border-color: var(--primary);
-      transform: scale(1.04);
     }
     .custom-chk::before {
       content: "";
       width: 0.68rem;
       height: 0.68rem;
       transform: scale(0);
-      transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
       background-color: #FFFFFF;
       clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
     }
     .custom-chk:checked {
       background-color: var(--primary);
       border-color: var(--primary);
-      box-shadow: 0 2px 6px color-mix(in srgb, var(--primary) 35%, transparent);
     }
     .custom-chk:checked::before {
       transform: scale(1);
-    }
-    .custom-chk:focus-visible {
-      outline: 2px solid var(--primary);
-      outline-offset: 2px;
     }
   </style>
 </head>
 <body class="min-h-screen flex flex-col antialiased">
 
   <!-- CABECERA -->
-  <header class="w-full theme-surface border-b px-4 sm:px-6 py-3.5 sticky top-0 z-30">
-    <div class="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-2.5">
-      <div class="flex items-center gap-3 min-w-0">
+  <header class="w-full theme-surface border-b px-3 sm:px-6 py-3 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5 min-w-0">
         <div id="header-logo-box" class="w-9 h-9 rounded-xl theme-primary-bg flex items-center justify-center shadow-sm flex-shrink-0 font-bold text-base">
           ☕
         </div>
         <div class="min-w-0">
-          <h1 id="header-local-name" class="font-display text-base sm:text-lg font-extrabold theme-text-main truncate leading-tight">
+          <h1 id="header-local-name" class="font-display text-sm sm:text-lg font-extrabold theme-text-main truncate leading-tight">
             Stock Tacita de Café
           </h1>
-          <p id="header-user-info" class="text-[11px] theme-text-muted truncate">
-            Control de bodega en turno
-          </p>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <p id="header-user-info" class="text-[11px] theme-text-muted truncate">
+              Control de bodega en turno
+            </p>
+            <span id="live-sync-indicator" class="hidden inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-700/15 text-emerald-700 border border-emerald-700/30">
+              <span id="live-sync-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+              <span id="live-sync-label">En vivo</span>
+            </span>
+          </div>
         </div>
       </div>
 
-      <!-- Controles superiores: Diseño (por perfil), PIN QR, Contraseña y Salir -->
+      <!-- Controles superiores -->
       <div class="flex items-center gap-1.5 flex-wrap flex-shrink-0">
-        <!-- Botón Diseño (Modo Claro/Oscuro + Color Principal individual por perfil) -->
+        <!-- Botón Diseño (por perfil) -->
         <div class="relative">
           <button
             type="button"
@@ -154,7 +169,6 @@
               <button type="button" onclick="resetThemePreferences()" class="text-[10px] font-bold theme-primary-text underline">Restaurar</button>
             </div>
 
-            <!-- Selector Claro / Oscuro -->
             <div class="grid grid-cols-2 gap-1.5 theme-muted-btn p-1 rounded-xl border">
               <button type="button" id="btn-mode-light" onclick="setThemeMode('light')" class="py-1.5 rounded-lg text-xs font-bold theme-primary-bg transition">
                 ☀️ Claro
@@ -164,7 +178,6 @@
               </button>
             </div>
 
-            <!-- Solo Color Principal -->
             <div class="text-xs">
               <label class="flex items-center justify-between gap-2 cursor-pointer">
                 <div>
@@ -179,9 +192,8 @@
           </div>
         </div>
 
-        <!-- Acciones solo cuando hay sesión iniciada -->
+        <!-- Acciones solo con sesión activa -->
         <div id="header-actions" class="hidden flex items-center gap-1.5 flex-wrap">
-          <!-- Botón desplegable para ver PIN QR de 4 dígitos -->
           <div class="relative">
             <button
               type="button"
@@ -201,7 +213,6 @@
             </div>
           </div>
 
-          <!-- Botón directo para cambiar contraseña -->
           <button
             type="button"
             onclick="openChangePasswordModal()"
@@ -241,11 +252,11 @@
       <form onsubmit="handleLogin(event)" class="space-y-3">
         <div>
           <label for="login-email" class="block text-xs font-bold theme-text-main mb-1">Correo</label>
-          <input id="login-email" type="email" required placeholder="tu.correo@ejemplo.cl" class="w-full px-3.5 py-2.5 theme-input border rounded-xl text-sm outline-none" />
+          <input id="login-email" type="email" required placeholder="tu.correo@ejemplo.cl" class="w-full px-3.5 py-2.5 theme-input border rounded-xl outline-none" />
         </div>
         <div>
           <label for="login-password" class="block text-xs font-bold theme-text-main mb-1">Contraseña</label>
-          <input id="login-password" type="password" required placeholder="••••••••" class="w-full px-3.5 py-2.5 theme-input border rounded-xl text-sm outline-none" />
+          <input id="login-password" type="password" required placeholder="••••••••" class="w-full px-3.5 py-2.5 theme-input border rounded-xl outline-none" />
         </div>
         <p id="login-error" class="hidden text-xs font-bold text-red-700 bg-red-800/15 border border-red-700/30 p-2.5 rounded-xl"></p>
         <button id="btn-login" type="submit" class="w-full py-3 theme-primary-bg font-display font-bold rounded-xl text-sm shadow-sm transition">
@@ -271,11 +282,11 @@
       <form onsubmit="submitQrOrderAuth(event)" class="space-y-3">
         <div>
           <label for="qr-user-name" class="block text-xs font-bold theme-text-main mb-1">Tu Nombre *</label>
-          <input id="qr-user-name" type="text" required placeholder="Ej. Benjamín" class="w-full px-3.5 py-2.5 theme-input border rounded-xl text-sm outline-none" />
+          <input id="qr-user-name" type="text" required placeholder="Ej. Benjamín" class="w-full px-3.5 py-2.5 theme-input border rounded-xl outline-none" />
         </div>
         <div>
           <label for="qr-user-pin" class="block text-xs font-bold theme-text-main mb-1">Tu PIN de 4 dígitos *</label>
-          <input id="qr-user-pin" type="password" inputmode="numeric" maxlength="4" required placeholder="••••" class="w-full px-3.5 py-2.5 theme-input border rounded-xl text-sm font-mono tracking-widest outline-none" />
+          <input id="qr-user-pin" type="password" inputmode="numeric" maxlength="4" required placeholder="••••" class="w-full px-3.5 py-2.5 theme-input border rounded-xl font-mono tracking-widest outline-none" />
         </div>
         <p id="qr-checkout-error" class="hidden text-xs font-bold text-red-700 bg-red-800/15 border border-red-700/30 p-2.5 rounded-xl"></p>
         <button id="btn-qr-confirm" type="submit" class="w-full py-3 theme-primary-bg font-display font-bold rounded-xl text-sm shadow-sm transition">
@@ -286,34 +297,37 @@
   </main>
 
   <!-- APP PRINCIPAL (AUTENTICADO) -->
-  <main id="view-app" class="hidden flex-1 w-full max-w-4xl mx-auto px-4 py-5 space-y-5">
+  <main id="view-app" class="hidden flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 py-4 space-y-4">
 
-    <!-- Navegación por Pestañas -->
-    <nav id="main-tabs-nav" aria-label="Secciones" class="grid grid-cols-4 gap-1.5 theme-surface p-1.5 rounded-2xl border">
-      <button type="button" id="tab-btn-stock" onclick="switchTab('stock')" class="py-2.5 px-2 rounded-xl text-xs font-bold theme-primary-bg transition">
+    <!-- Navegación por Pestañas (Responsive) -->
+    <nav id="main-tabs-nav" aria-label="Secciones" class="grid grid-cols-5 sm:grid-cols-6 gap-1 theme-surface p-1.5 rounded-2xl border">
+      <button type="button" id="tab-btn-stock" onclick="switchTab('stock')" class="py-2.5 px-1.5 rounded-xl text-xs font-bold theme-primary-bg transition truncate">
         📦 Stock
       </button>
-      <button type="button" id="tab-btn-pedidos" onclick="switchTab('pedidos')" class="py-2.5 px-2 rounded-xl text-xs font-bold theme-text-muted hover:opacity-80 transition">
+      <button type="button" id="tab-btn-pedidos" onclick="switchTab('pedidos')" class="py-2.5 px-1.5 rounded-xl text-xs font-bold theme-text-muted hover:opacity-80 transition truncate">
         📲 Pedidos
       </button>
-      <button type="button" id="tab-btn-proveedores" onclick="switchTab('proveedores')" class="py-2.5 px-2 rounded-xl text-xs font-bold theme-text-muted hover:opacity-80 transition">
-        🚚 Proveedores
+      <button type="button" id="tab-btn-proveedores" onclick="switchTab('proveedores')" class="py-2.5 px-1.5 rounded-xl text-xs font-bold theme-text-muted hover:opacity-80 transition truncate">
+        🚚 Prov.
       </button>
-      <button type="button" id="tab-btn-bitacora" onclick="switchTab('bitacora')" class="py-2.5 px-2 rounded-xl text-xs font-bold theme-text-muted hover:opacity-80 transition">
+      <button type="button" id="tab-btn-bitacora" onclick="switchTab('bitacora')" class="py-2.5 px-1.5 rounded-xl text-xs font-bold theme-text-muted hover:opacity-80 transition truncate">
         📋 Bitácora
       </button>
-      <button type="button" id="tab-btn-equipo" onclick="switchTab('equipo')" class="hidden py-2.5 px-2 rounded-xl text-xs font-bold theme-text-muted hover:opacity-80 transition">
-        👥 Equipo
+      <button type="button" id="tab-btn-resumen" onclick="switchTab('resumen')" class="py-2.5 px-1.5 rounded-xl text-xs font-bold theme-text-muted hover:opacity-80 transition truncate">
+        📊 Resumen
+      </button>
+      <button type="button" id="tab-btn-config" onclick="switchTab('config')" class="hidden py-2.5 px-1.5 rounded-xl text-xs font-bold theme-text-muted hover:opacity-80 transition truncate">
+        ⚙️ Config.
       </button>
     </nav>
 
     <!-- =================================================================== -->
-    <!-- PESTAÑA 1: INVENTARIO (25% CRÍTICO / 75% IDEAL + EDICIÓN ADMIN)     -->
+    <!-- PESTAÑA 1: INVENTARIO (3 COLUMNAS CONFIGURABLES + PAQUETES + %)     -->
     <!-- =================================================================== -->
     <section id="tab-stock" class="space-y-4">
       <div class="flex flex-wrap items-center justify-between gap-2">
-        <div class="flex-1 min-w-[200px]">
-          <input id="stock-search" type="search" oninput="renderProducts()" placeholder="Buscar insumo (ej. leche, café)..." class="w-full px-3.5 py-2.5 theme-input border rounded-xl text-xs font-medium outline-none" />
+        <div class="flex-1 min-w-[180px]">
+          <input id="stock-search" type="search" oninput="renderProducts()" placeholder="Buscar insumo (ej. leche, bebida, café)..." class="w-full px-3.5 py-2.5 theme-input border rounded-xl font-medium outline-none" />
         </div>
         <button type="button" id="btn-filter-critical" onclick="toggleCriticalFilter()" class="px-3.5 py-2.5 rounded-xl theme-surface hover:opacity-85 theme-text-main border text-xs font-bold transition">
           🔴 Solo críticos
@@ -324,27 +338,31 @@
       </div>
 
       <!-- Leyenda escala visual -->
-      <div class="flex items-center justify-end gap-4 text-[10px] theme-text-muted px-1">
-        <span class="flex items-center gap-1"><span class="inline-block w-0.5 h-2.5 bg-red-600"></span> 25%: Mínimo crítico</span>
-        <span class="flex items-center gap-1"><span class="inline-block w-0.5 h-2.5 bg-emerald-600"></span> 75%: Stock ideal</span>
+      <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] theme-text-muted px-1">
+        <span>Toca <strong>− 1</strong> para descontar al instante (fracciones de 25% en productos por porcentaje).</span>
+        <div class="flex items-center gap-4">
+          <span class="flex items-center gap-1"><span class="inline-block w-0.5 h-2.5 bg-red-600"></span> 25%: Mínimo crítico</span>
+          <span class="flex items-center gap-1"><span class="inline-block w-0.5 h-2.5 bg-emerald-600"></span> 75%: Stock ideal</span>
+        </div>
       </div>
 
-      <div id="products-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+      <!-- Contenedor de 3 Columnas Configurables -->
+      <div id="stock-columns-container" class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start"></div>
     </section>
 
     <!-- =================================================================== -->
-    <!-- PESTAÑA 2: PEDIDOS POR WHATSAPP + QR CELULAR + EDICIÓN + ELIMINAR   -->
+    <!-- PESTAÑA 2: PEDIDOS POR WHATSAPP (CON SUGERENCIA DE PAQUETES Y %)    -->
     <!-- =================================================================== -->
-    <section id="tab-pedidos" class="hidden space-y-5">
+    <section id="tab-pedidos" class="hidden max-w-4xl mx-auto space-y-5">
       <div class="theme-surface border rounded-2xl p-4 sm:p-5 shadow-sm space-y-3.5">
         <div>
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-primary-text">Reposición Rápida</span>
-          <h2 class="font-display text-base font-bold theme-text-main">Armar Pedido por WhatsApp</h2>
-          <p class="text-xs theme-text-muted">Elige un proveedor; se pre-cargan los insumos bajos en stock para enviar directo o escanear con el celular.</p>
+          <span id="order-builder-kicker" class="text-[10px] font-bold uppercase tracking-wider theme-primary-text">Reposición Inteligente</span>
+          <h2 id="order-builder-title" class="font-display text-base font-bold theme-text-main">Armar Pedido por WhatsApp</h2>
+          <p id="order-builder-subtitle" class="text-xs theme-text-muted">Calcula automáticamente unidades sueltas, paquetes completos (ej. packs de 6) o reposición de envases al llegar al umbral %.</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-          <select id="order-provider-select" onchange="renderOrderBuilder()" class="flex-1 min-w-[200px] px-3.5 py-2.5 theme-input border rounded-xl text-xs font-bold outline-none"></select>
+          <select id="order-provider-select" onchange="renderOrderBuilder()" class="flex-1 min-w-[200px] px-3.5 py-2.5 theme-input border rounded-xl font-bold outline-none"></select>
         </div>
 
         <div id="order-builder-items" class="space-y-2"></div>
@@ -352,10 +370,10 @@
         <div class="pt-2 flex flex-wrap items-center justify-between gap-2 border-t theme-border">
           <p id="order-builder-summary" class="text-xs font-semibold theme-text-muted">0 productos seleccionados</p>
           <div class="flex flex-wrap items-center gap-2">
-            <button type="button" onclick="createOrderQRForMobile()" class="px-3.5 py-2.5 rounded-xl theme-muted-btn hover:opacity-85 border text-xs font-bold transition">
+            <button type="button" id="btn-order-qr-mobile" onclick="createOrderQRForMobile()" class="px-3.5 py-2.5 rounded-xl theme-muted-btn hover:opacity-85 border text-xs font-bold transition">
               📱 QR para pedir en Celular
             </button>
-            <button type="button" onclick="createOrderAndOpenWhatsApp()" class="px-4 py-2.5 rounded-xl theme-primary-bg text-xs font-bold transition shadow-xs">
+            <button type="button" id="btn-order-submit-main" onclick="createOrderAndOpenWhatsApp()" class="px-4 py-2.5 rounded-xl theme-primary-bg text-xs font-bold transition shadow-xs">
               📲 Guardar y Pedir aquí
             </button>
           </div>
@@ -377,25 +395,31 @@
     <!-- =================================================================== -->
     <!-- PESTAÑA 3: PROVEEDORES (ALTA + EDICIÓN + ASIGNACIÓN MÚLTIPLE)       -->
     <!-- =================================================================== -->
-    <section id="tab-proveedores" class="hidden space-y-4">
+    <section id="tab-proveedores" class="hidden max-w-4xl mx-auto space-y-4">
       <div id="admin-add-provider-box" class="theme-surface border rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
         <h2 class="font-display text-base font-bold theme-text-main">Agregar Proveedor</h2>
-        <form onsubmit="addProvider(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
-          <div class="sm:col-span-4">
-            <label for="prov-name" class="block text-[11px] font-bold theme-text-main mb-1">Nombre *</label>
-            <input id="prov-name" type="text" required placeholder="Ej. Tostaduría Sur" class="w-full px-3 py-2 theme-input border rounded-xl text-xs outline-none" />
+        <form onsubmit="addProvider(event)" class="space-y-2.5">
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+            <div class="sm:col-span-4">
+              <label for="prov-name" class="block text-[11px] font-bold theme-text-main mb-1">Nombre / Tienda *</label>
+              <input id="prov-name" type="text" required placeholder="Ej. Tostaduría Sur / Supermercado Líder" class="w-full px-3 py-2 theme-input border rounded-xl outline-none" />
+            </div>
+            <div id="prov-wa-wrapper" class="sm:col-span-4">
+              <label for="prov-wa" class="block text-[11px] font-bold theme-text-main mb-1">WhatsApp (opcional)</label>
+              <input id="prov-wa" type="tel" placeholder="Ej. 56912345678" class="w-full px-3 py-2 theme-input border rounded-xl outline-none" />
+            </div>
+            <div class="sm:col-span-3">
+              <label for="prov-cat" class="block text-[11px] font-bold theme-text-main mb-1">Rubro</label>
+              <input id="prov-cat" type="text" placeholder="Ej. Lácteos / Compra rápida" class="w-full px-3 py-2 theme-input border rounded-xl outline-none" />
+            </div>
+            <div class="sm:col-span-1">
+              <button type="submit" class="w-full py-2 px-3 rounded-xl theme-primary-bg text-xs font-bold transition">+</button>
+            </div>
           </div>
-          <div class="sm:col-span-4">
-            <label for="prov-wa" class="block text-[11px] font-bold theme-text-main mb-1">WhatsApp (opcional)</label>
-            <input id="prov-wa" type="tel" placeholder="Ej. 56912345678" class="w-full px-3 py-2 theme-input border rounded-xl text-xs outline-none" />
-          </div>
-          <div class="sm:col-span-3">
-            <label for="prov-cat" class="block text-[11px] font-bold theme-text-main mb-1">Rubro</label>
-            <input id="prov-cat" type="text" placeholder="Ej. Lácteos / Café" class="w-full px-3 py-2 theme-input border rounded-xl text-xs outline-none" />
-          </div>
-          <div class="sm:col-span-1">
-            <button type="submit" class="w-full py-2 px-3 rounded-xl theme-primary-bg text-xs font-bold transition">+</button>
-          </div>
+          <label class="inline-flex items-center gap-2 cursor-pointer text-xs font-bold theme-text-main select-none">
+            <input id="prov-is-presencial" type="checkbox" onchange="toggleNewProviderPresencialMode()" class="custom-chk" />
+            <span>🛍️ Es Compra Presencial (tienda física / supermercado, sin envío por WhatsApp)</span>
+          </label>
         </form>
       </div>
 
@@ -405,7 +429,7 @@
     <!-- =================================================================== -->
     <!-- PESTAÑA 4: BITÁCORA DE MOVIMIENTOS                                  -->
     <!-- =================================================================== -->
-    <section id="tab-bitacora" class="hidden theme-surface border rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+    <section id="tab-bitacora" class="hidden max-w-4xl mx-auto theme-surface border rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 class="font-display text-base font-bold theme-text-main">Últimos Movimientos</h2>
@@ -415,7 +439,7 @@
           <button type="button" id="btn-clear-audit" onclick="clearAllAuditLogs()" class="hidden px-3 py-1.5 rounded-xl bg-red-800/15 hover:bg-red-800/25 text-red-700 border border-red-700/30 text-xs font-bold transition">
             🗑️ Limpiar historial
           </button>
-          <button type="button" onclick="loadAllData()" class="px-3 py-1.5 rounded-xl theme-muted-btn hover:opacity-85 border text-xs font-bold transition">
+          <button type="button" onclick="loadAllData(false)" class="px-3 py-1.5 rounded-xl theme-muted-btn hover:opacity-85 border text-xs font-bold transition">
             ↻ Actualizar
           </button>
         </div>
@@ -424,74 +448,141 @@
     </section>
 
     <!-- =================================================================== -->
-    <!-- PESTAÑA 5: GESTIÓN DE EQUIPO (CREACIÓN DIRECTA + UUID RESPALDO)     -->
+    <!-- PESTAÑA 5: RESUMEN SEMANAL (ACCESIBLE PARA TODOS LOS MIEMBROS)      -->
     <!-- =================================================================== -->
-    <section id="tab-equipo" class="hidden space-y-4">
+    <section id="tab-resumen" class="hidden max-w-4xl mx-auto space-y-4">
       <div class="theme-surface border rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
-        <div>
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-primary-text">Administración</span>
-          <h2 class="font-display text-base font-bold theme-text-main">Crear y Agregar Integrante al Local</h2>
-          <p class="text-xs theme-text-muted">Crea la cuenta con correo, contraseña y un PIN de 4 dígitos para que pueda firmar pedidos por QR.</p>
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider theme-primary-text">Analítica Operativa</span>
+            <h2 class="font-display text-base sm:text-lg font-extrabold theme-text-main">Resumen Semanal de Bodega</h2>
+            <p class="text-xs theme-text-muted">
+              Cierre automático todos los <strong>sábados a las 10:00 AM (hora Chile)</strong> cubriendo desde el lunes hasta el sábado en la mañana. Puedes generar un corte parcial en cualquier momento sin interrumpir el acumulado semanal.
+            </p>
+          </div>
+          <button type="button" onclick="generateWeeklySummary(true)" class="px-4 py-2.5 rounded-xl theme-primary-bg text-xs font-bold transition shadow-sm flex-shrink-0">
+            📊 Generar Resumen Ahora
+          </button>
         </div>
 
-        <form onsubmit="addTeamMember(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
-          <div class="sm:col-span-3">
-            <label for="team-name" class="block text-[11px] font-bold theme-text-main mb-1">Nombre *</label>
-            <input id="team-name" type="text" required placeholder="Ej. Camila" class="w-full px-3 py-2 theme-input border rounded-xl text-xs outline-none" />
-          </div>
-          <div class="sm:col-span-3">
-            <label for="team-email" class="block text-[11px] font-bold theme-text-main mb-1">Correo *</label>
-            <input id="team-email" type="email" required placeholder="camila@tacita.cl" class="w-full px-3 py-2 theme-input border rounded-xl text-xs outline-none" />
-          </div>
-          <div class="sm:col-span-2">
-            <label for="team-password" class="block text-[11px] font-bold theme-text-main mb-1">Contraseña *</label>
-            <input id="team-password" type="password" minlength="6" required placeholder="Mín. 6 caract." class="w-full px-3 py-2 theme-input border rounded-xl text-xs outline-none" />
-          </div>
-          <div class="sm:col-span-2">
-            <label for="team-pin" class="block text-[11px] font-bold theme-text-main mb-1">PIN QR (4 díg.) *</label>
-            <input id="team-pin" type="text" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required placeholder="1234" class="w-full px-3 py-2 theme-input border rounded-xl text-xs font-mono text-center outline-none" />
-          </div>
-          <div class="sm:col-span-1">
-            <label for="team-role" class="block text-[11px] font-bold theme-text-main mb-1">Rol</label>
-            <select id="team-role" class="w-full px-2 py-2 theme-input border rounded-xl text-xs font-bold outline-none">
-              <option value="empleado">Emp.</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-          <div class="sm:col-span-1">
-            <button type="submit" id="btn-add-member" class="w-full py-2 px-3 rounded-xl theme-primary-bg text-xs font-bold transition">+</button>
-          </div>
-        </form>
-
-        <!-- Opción secundaria colapsable por si el usuario ya existía en Auth -->
-        <details class="pt-1">
-          <summary class="text-[11px] font-bold theme-primary-text cursor-pointer select-none">
-            ¿El usuario ya tenía cuenta en Supabase? Vincular por User ID (UUID)
-          </summary>
-          <form onsubmit="linkExistingMemberByUuid(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end pt-2.5">
-            <div class="sm:col-span-5">
-              <input id="link-uuid" type="text" required placeholder="User ID (xxxxxxxx-xxxx-...)" class="w-full px-3 py-2 theme-input border rounded-xl text-xs font-mono outline-none" />
-            </div>
-            <div class="sm:col-span-3">
-              <input id="link-name" type="text" required placeholder="Nombre a mostrar" class="w-full px-3 py-2 theme-input border rounded-xl text-xs outline-none" />
-            </div>
-            <div class="sm:col-span-2">
-              <input id="link-pin" type="text" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required placeholder="PIN 4 díg." class="w-full px-3 py-2 theme-input border rounded-xl text-xs font-mono text-center outline-none" />
-            </div>
-            <div class="sm:col-span-2">
-              <button type="submit" class="w-full py-2 px-3 rounded-xl theme-muted-btn border text-xs font-bold">Vincular</button>
-            </div>
-          </form>
-        </details>
+        <!-- Banner de cierre oficial sábado 10:00 AM Chile -->
+        <div id="saturday-official-banner" class="hidden p-3 rounded-xl theme-primary-badge border border-current/25 text-xs font-bold flex items-center justify-between gap-2">
+          <span>🔔 ¡Cierre Semanal Oficial de Sábado (10:00 AM Chile) disponible!</span>
+          <button type="button" onclick="generateWeeklySummary(false)" class="underline">Ver cierre sábado</button>
+        </div>
       </div>
 
+      <!-- Resultado del Resumen Generado -->
+      <div id="weekly-summary-output" class="space-y-4"></div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- PESTAÑA 6: CONFIGURACIÓN (COLUMNAS DE STOCK + EQUIPO DESPLEGABLE)   -->
+    <!-- =================================================================== -->
+    <section id="tab-config" class="hidden max-w-4xl mx-auto space-y-5">
+
+      <!-- BLOQUE A: CONFIGURACIÓN DE LAS 3 COLUMNAS DE STOCK -->
       <div class="theme-surface border rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
-        <div class="flex items-center justify-between">
-          <h3 class="font-display text-base font-bold theme-text-main">Equipo del Local</h3>
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-wider theme-primary-text">Organización Visual</span>
+          <h2 class="font-display text-base font-bold theme-text-main">Nombres de las 3 Columnas de Stock</h2>
+          <p class="text-xs theme-text-muted">Define cómo se dividen los insumos en la pantalla principal (ej. Cafetería / Barra, Cocina / Salado, Bodega / Desechables).</p>
+        </div>
+
+        <form onsubmit="saveColumnNames(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label for="col-name-1" class="block text-[11px] font-bold theme-text-main mb-1">Columna 1 *</label>
+            <input id="col-name-1" type="text" required class="w-full px-3 py-2 theme-input border rounded-xl outline-none font-semibold" />
+          </div>
+          <div>
+            <label for="col-name-2" class="block text-[11px] font-bold theme-text-main mb-1">Columna 2 *</label>
+            <input id="col-name-2" type="text" required class="w-full px-3 py-2 theme-input border rounded-xl outline-none font-semibold" />
+          </div>
+          <div>
+            <label for="col-name-3" class="block text-[11px] font-bold theme-text-main mb-1">Columna 3 *</label>
+            <input id="col-name-3" type="text" required class="w-full px-3 py-2 theme-input border rounded-xl outline-none font-semibold" />
+          </div>
+          <div class="sm:col-span-3 flex justify-end pt-1">
+            <button type="submit" class="px-4 py-2 rounded-xl theme-primary-bg text-xs font-bold transition">
+              Guardar Nombres de Columnas
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- BLOQUE B: GESTIÓN DE EQUIPO (FORMULARIO COMPRIMIDO + LISTA VISIBLE) -->
+      <div class="theme-surface border rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider theme-primary-text">Accesos y PINs</span>
+            <h2 class="font-display text-base font-bold theme-text-main">Equipo del Local</h2>
+          </div>
           <button type="button" onclick="loadTeamMembers()" class="px-3 py-1.5 rounded-xl theme-muted-btn hover:opacity-85 border text-xs font-bold transition">
             ↻ Actualizar
           </button>
         </div>
+
+        <!-- Menú desplegable comprimido por defecto para crear/agregar integrantes -->
+        <details id="team-add-details" class="theme-input border rounded-2xl p-3.5">
+          <summary class="font-display text-xs font-bold theme-primary-text cursor-pointer select-none flex items-center justify-between">
+            <span>➕ Crear o Agregar Nuevo Integrante al Equipo</span>
+            <span class="text-[10px] theme-text-muted">(Toca para desplegar)</span>
+          </summary>
+
+          <div class="pt-3 mt-3 border-t theme-border space-y-3">
+            <form onsubmit="addTeamMember(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+              <div class="sm:col-span-3">
+                <label for="team-name" class="block text-[11px] font-bold theme-text-main mb-1">Nombre *</label>
+                <input id="team-name" type="text" required placeholder="Ej. Camila" class="w-full px-3 py-2 theme-surface border rounded-xl outline-none" />
+              </div>
+              <div class="sm:col-span-3">
+                <label for="team-email" class="block text-[11px] font-bold theme-text-main mb-1">Correo *</label>
+                <input id="team-email" type="email" required placeholder="camila@tacita.cl" class="w-full px-3 py-2 theme-surface border rounded-xl outline-none" />
+              </div>
+              <div class="sm:col-span-2">
+                <label for="team-password" class="block text-[11px] font-bold theme-text-main mb-1">Contraseña *</label>
+                <input id="team-password" type="password" minlength="6" required placeholder="Mín. 6 caract." class="w-full px-3 py-2 theme-surface border rounded-xl outline-none" />
+              </div>
+              <div class="sm:col-span-2">
+                <label for="team-pin" class="block text-[11px] font-bold theme-text-main mb-1">PIN QR (4 díg.) *</label>
+                <input id="team-pin" type="text" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required placeholder="1234" class="w-full px-3 py-2 theme-surface border rounded-xl font-mono text-center outline-none" />
+              </div>
+              <div class="sm:col-span-1">
+                <label for="team-role" class="block text-[11px] font-bold theme-text-main mb-1">Rol</label>
+                <select id="team-role" class="w-full px-2 py-2 theme-surface border rounded-xl font-bold outline-none">
+                  <option value="empleado">Emp.</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <div class="sm:col-span-1">
+                <button type="submit" id="btn-add-member" class="w-full py-2 px-3 rounded-xl theme-primary-bg text-xs font-bold transition">+</button>
+              </div>
+            </form>
+
+            <!-- Respaldo por UUID -->
+            <details class="pt-1">
+              <summary class="text-[11px] font-bold theme-text-muted cursor-pointer select-none">
+                ¿El usuario ya tenía cuenta en Supabase? Vincular por User ID (UUID)
+              </summary>
+              <form onsubmit="linkExistingMemberByUuid(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end pt-2">
+                <div class="sm:col-span-5">
+                  <input id="link-uuid" type="text" required placeholder="User ID (xxxxxxxx-xxxx-...)" class="w-full px-3 py-2 theme-surface border rounded-xl font-mono outline-none" />
+                </div>
+                <div class="sm:col-span-3">
+                  <input id="link-name" type="text" required placeholder="Nombre a mostrar" class="w-full px-3 py-2 theme-surface border rounded-xl outline-none" />
+                </div>
+                <div class="sm:col-span-2">
+                  <input id="link-pin" type="text" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required placeholder="PIN 4 díg." class="w-full px-3 py-2 theme-surface border rounded-xl font-mono text-center outline-none" />
+                </div>
+                <div class="sm:col-span-2">
+                  <button type="submit" class="w-full py-2 px-3 rounded-xl theme-muted-btn border text-xs font-bold">Vincular</button>
+                </div>
+              </form>
+            </details>
+          </div>
+        </details>
+
+        <!-- Lista de integrantes siempre visible abajo -->
         <div id="team-members-list" class="space-y-2.5"></div>
       </div>
     </section>
@@ -499,10 +590,10 @@
   </main>
 
   <!-- ===================================================================== -->
-  <!-- MODAL 1: NUEVO PRODUCTO (INDIVIDUAL O LOTE SEPARADO POR COMAS)        -->
+  <!-- MODAL 1: NUEVO PRODUCTO (CON COLUMNA + PAQUETES + MODO PORCENTAJE)    -->
   <!-- ===================================================================== -->
-  <div id="product-modal" class="fixed inset-0 bg-stone-950/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="theme-surface rounded-2xl max-w-md w-full p-5 shadow-2xl border space-y-4">
+  <div id="product-modal" class="fixed inset-0 bg-stone-950/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="theme-surface rounded-2xl max-w-md w-full p-5 shadow-2xl border space-y-4 my-auto">
       <div class="flex items-center justify-between pb-2 border-b theme-border">
         <h3 class="font-display font-bold theme-text-main text-base">Agregar Productos a Bodega</h3>
         <button type="button" onclick="closeProductModal()" class="w-8 h-8 rounded-lg theme-muted-btn font-bold text-lg flex items-center justify-center">&times;</button>
@@ -520,40 +611,73 @@
       <form onsubmit="saveNewProduct(event)" class="space-y-3">
         <div id="prod-single-wrapper">
           <label for="prod-name" class="block text-xs font-bold theme-text-main mb-1">Nombre *</label>
-          <input id="prod-name" type="text" placeholder="Ej. Leche Entera 1L" class="w-full px-3 py-2 theme-input border rounded-xl text-sm outline-none" />
+          <input id="prod-name" type="text" placeholder="Ej. Bebida Lata 350cc / Café Grano 1kg" class="w-full px-3 py-2 theme-input border rounded-xl outline-none" />
         </div>
 
         <div id="prod-bulk-wrapper" class="hidden space-y-1">
           <label for="prod-bulk-names" class="block text-xs font-bold theme-text-main">Nombres separados por coma (,) *</label>
-          <textarea id="prod-bulk-names" rows="3" placeholder="Ej. Leche Entera 1L, Leche Sin Lactosa 1L, Leche Avena 1L" class="w-full px-3 py-2 theme-input border rounded-xl text-sm outline-none"></textarea>
-          <p class="text-[11px] theme-text-muted">Todos compartirán unidad, proveedor y umbrales base.</p>
+          <textarea id="prod-bulk-names" rows="2" placeholder="Ej. Coca-Cola 350cc, Sprite 350cc, Fanta 350cc" class="w-full px-3 py-2 theme-input border rounded-xl outline-none"></textarea>
         </div>
 
         <div class="grid grid-cols-2 gap-2.5">
           <div>
-            <label for="prod-unit" class="block text-xs font-bold theme-text-main mb-1">Unidad *</label>
-            <input id="prod-unit" type="text" required placeholder="caja / bolsa / botella" value="unidad" class="w-full px-3 py-2 theme-input border rounded-xl text-sm outline-none" />
+            <label for="prod-column" class="block text-xs font-bold theme-text-main mb-1">Columna de Stock *</label>
+            <select id="prod-column" class="w-full px-3 py-2 theme-input border rounded-xl font-bold outline-none"></select>
           </div>
           <div>
             <label for="prod-provider" class="block text-xs font-bold theme-text-main mb-1">Proveedor</label>
-            <select id="prod-provider" class="w-full px-3 py-2 theme-input border rounded-xl text-sm outline-none"></select>
+            <select id="prod-provider" class="w-full px-3 py-2 theme-input border rounded-xl outline-none"></select>
           </div>
         </div>
-        <div class="grid grid-cols-3 gap-2.5">
-          <div>
-            <label for="prod-actual" class="block text-xs font-bold theme-text-main mb-1">Stock inicial *</label>
-            <input id="prod-actual" type="number" min="0" required value="6" class="w-full px-3 py-2 theme-input border rounded-xl text-sm outline-none" />
+
+        <!-- Modo de medición: Unidades vs Porcentaje (%) -->
+        <div class="p-3 rounded-xl theme-input border space-y-2.5">
+          <label class="flex items-center gap-2.5 cursor-pointer text-xs font-bold theme-text-main">
+            <input id="prod-is-percent" type="checkbox" onchange="toggleNewProductPercentMode()" class="custom-chk" />
+            <span>Medir por Porcentaje (%) (1 envase grande que baja de 25% en 25%)</span>
+          </label>
+
+          <div id="prod-unit-fields" class="grid grid-cols-4 gap-2">
+            <div class="col-span-1">
+              <label for="prod-unit" class="block text-[10px] font-bold theme-text-muted mb-1">Unidad</label>
+              <input id="prod-unit" type="text" value="unid." class="w-full px-2 py-1.5 theme-surface border rounded-lg outline-none" />
+            </div>
+            <div>
+              <label for="prod-actual" class="block text-[10px] font-bold theme-text-muted mb-1">Inicial</label>
+              <input id="prod-actual" type="number" min="0" value="6" class="w-full px-2 py-1.5 theme-surface border rounded-lg outline-none" />
+            </div>
+            <div>
+              <label for="prod-min" class="block text-[10px] font-bold theme-text-muted mb-1">Mín. (25%)</label>
+              <input id="prod-min" type="number" min="0" value="2" class="w-full px-2 py-1.5 theme-surface border rounded-lg outline-none" />
+            </div>
+            <div>
+              <label for="prod-max" class="block text-[10px] font-bold theme-text-muted mb-1">Ideal (75%)</label>
+              <input id="prod-max" type="number" min="1" value="12" class="w-full px-2 py-1.5 theme-surface border rounded-lg outline-none" />
+            </div>
           </div>
-          <div>
-            <label for="prod-min" class="block text-xs font-bold theme-text-main mb-1">Mínimo (25%) *</label>
-            <input id="prod-min" type="number" min="0" required value="2" class="w-full px-3 py-2 theme-input border rounded-xl text-sm outline-none" />
-          </div>
-          <div>
-            <label for="prod-max" class="block text-xs font-bold theme-text-main mb-1">Ideal (75%) *</label>
-            <input id="prod-max" type="number" min="1" required value="12" class="w-full px-3 py-2 theme-input border rounded-xl text-sm outline-none" />
+
+          <div id="prod-percent-fields" class="hidden grid grid-cols-2 gap-2">
+            <div>
+              <label for="prod-pct-actual" class="block text-[10px] font-bold theme-text-muted mb-1">% Actual (0–100)</label>
+              <select id="prod-pct-actual" class="w-full px-2.5 py-1.5 theme-surface border rounded-lg font-bold outline-none">
+                <option value="100" selected>100% (Lleno)</option>
+                <option value="75">75%</option>
+                <option value="50">50%</option>
+                <option value="25">25%</option>
+                <option value="0">0% (Vacío)</option>
+              </select>
+            </div>
+            <div>
+              <label for="prod-pct-min" class="block text-[10px] font-bold theme-text-muted mb-1">Pedir reposición al llegar a:</label>
+              <select id="prod-pct-min" class="w-full px-2.5 py-1.5 theme-surface border rounded-lg font-bold outline-none">
+                <option value="25" selected>25% (Crítico)</option>
+                <option value="50">50% (Medio)</option>
+              </select>
+            </div>
           </div>
         </div>
-        <div class="flex justify-end gap-2 pt-2">
+
+        <div class="flex justify-end gap-2 pt-1">
           <button type="button" onclick="closeProductModal()" class="px-4 py-2 rounded-xl theme-muted-btn text-xs font-semibold border">Cancelar</button>
           <button type="submit" class="px-4 py-2 rounded-xl theme-primary-bg text-xs font-bold">Guardar</button>
         </div>
@@ -562,10 +686,10 @@
   </div>
 
   <!-- ===================================================================== -->
-  <!-- MODAL 2: EDITAR PRODUCTO Y STOCK EXISTENTE                            -->
+  <!-- MODAL 2: EDITAR PRODUCTO (COLUMNA + PAQUETES + PORCENTAJE %)          -->
   <!-- ===================================================================== -->
-  <div id="edit-product-modal" class="fixed inset-0 bg-stone-950/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="theme-surface rounded-2xl max-w-md w-full p-5 shadow-2xl border space-y-4">
+  <div id="edit-product-modal" class="fixed inset-0 bg-stone-950/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="theme-surface rounded-2xl max-w-md w-full p-5 shadow-2xl border space-y-4 my-auto">
       <div class="flex items-center justify-between pb-2 border-b theme-border">
         <h3 class="font-display font-bold theme-text-main text-base">Editar Producto / Stock</h3>
         <button type="button" onclick="closeEditProductModal()" class="w-8 h-8 rounded-lg theme-muted-btn font-bold text-lg flex items-center justify-center">&times;</button>
@@ -574,32 +698,79 @@
         <input type="hidden" id="edit-prod-id" />
         <div>
           <label for="edit-prod-name" class="block text-xs font-bold theme-text-main mb-1">Nombre *</label>
-          <input id="edit-prod-name" type="text" required class="w-full px-3 py-2 theme-input border rounded-xl text-sm outline-none" />
+          <input id="edit-prod-name" type="text" required class="w-full px-3 py-2 theme-input border rounded-xl outline-none" />
         </div>
+
         <div class="grid grid-cols-2 gap-2.5">
           <div>
-            <label for="edit-prod-unit" class="block text-xs font-bold theme-text-main mb-1">Unidad *</label>
-            <input id="edit-prod-unit" type="text" required class="w-full px-3 py-2 theme-input border rounded-xl text-sm outline-none" />
+            <label for="edit-prod-column" class="block text-xs font-bold theme-text-main mb-1">Columna de Stock *</label>
+            <select id="edit-prod-column" class="w-full px-3 py-2 theme-input border rounded-xl font-bold outline-none"></select>
           </div>
           <div>
             <label for="edit-prod-provider" class="block text-xs font-bold theme-text-main mb-1">Proveedor</label>
-            <select id="edit-prod-provider" class="w-full px-3 py-2 theme-input border rounded-xl text-sm outline-none"></select>
+            <select id="edit-prod-provider" class="w-full px-3 py-2 theme-input border rounded-xl outline-none"></select>
           </div>
         </div>
-        <div class="grid grid-cols-3 gap-2.5">
-          <div>
-            <label for="edit-prod-actual" class="block text-xs font-bold theme-text-main mb-1">Stock actual *</label>
-            <input id="edit-prod-actual" type="number" min="0" required class="w-full px-3 py-2 theme-input border rounded-xl text-sm font-bold outline-none" />
+
+        <!-- Configuración de Porcentaje (%) -->
+        <div class="p-3 rounded-xl theme-input border space-y-2.5">
+          <label class="flex items-center gap-2.5 cursor-pointer text-xs font-bold theme-text-main">
+            <input id="edit-prod-is-percent" type="checkbox" onchange="toggleEditProductPercentMode()" class="custom-chk" />
+            <span>Calcular stock por Porcentaje (%) (baja de 25% en 25%)</span>
+          </label>
+
+          <div id="edit-prod-unit-fields" class="grid grid-cols-4 gap-2">
+            <div>
+              <label for="edit-prod-unit" class="block text-[10px] font-bold theme-text-muted mb-1">Unidad</label>
+              <input id="edit-prod-unit" type="text" class="w-full px-2 py-1.5 theme-surface border rounded-lg outline-none" />
+            </div>
+            <div>
+              <label for="edit-prod-actual" class="block text-[10px] font-bold theme-text-muted mb-1">Actual</label>
+              <input id="edit-prod-actual" type="number" min="0" class="w-full px-2 py-1.5 theme-surface border rounded-lg font-bold outline-none" />
+            </div>
+            <div>
+              <label for="edit-prod-min" class="block text-[10px] font-bold theme-text-muted mb-1">Mín. (25%)</label>
+              <input id="edit-prod-min" type="number" min="0" class="w-full px-2 py-1.5 theme-surface border rounded-lg outline-none" />
+            </div>
+            <div>
+              <label for="edit-prod-max" class="block text-[10px] font-bold theme-text-muted mb-1">Ideal (75%)</label>
+              <input id="edit-prod-max" type="number" min="1" class="w-full px-2 py-1.5 theme-surface border rounded-lg outline-none" />
+            </div>
           </div>
-          <div>
-            <label for="edit-prod-min" class="block text-xs font-bold theme-text-main mb-1">Mínimo (25%) *</label>
-            <input id="edit-prod-min" type="number" min="0" required class="w-full px-3 py-2 theme-input border rounded-xl text-sm outline-none" />
-          </div>
-          <div>
-            <label for="edit-prod-max" class="block text-xs font-bold theme-text-main mb-1">Ideal (75%) *</label>
-            <input id="edit-prod-max" type="number" min="1" required class="w-full px-3 py-2 theme-input border rounded-xl text-sm outline-none" />
+
+          <div id="edit-prod-percent-fields" class="hidden grid grid-cols-2 gap-2">
+            <div>
+              <label for="edit-prod-pct-actual" class="block text-[10px] font-bold theme-text-muted mb-1">% Actual</label>
+              <select id="edit-prod-pct-actual" class="w-full px-2.5 py-1.5 theme-surface border rounded-lg font-bold outline-none">
+                <option value="100">100% (Lleno)</option>
+                <option value="75">75%</option>
+                <option value="50">50%</option>
+                <option value="25">25%</option>
+                <option value="0">0% (Vacío)</option>
+              </select>
+            </div>
+            <div>
+              <label for="edit-prod-pct-min" class="block text-[10px] font-bold theme-text-muted mb-1">Pedir reposición en:</label>
+              <select id="edit-prod-pct-min" class="w-full px-2.5 py-1.5 theme-surface border rounded-lg font-bold outline-none">
+                <option value="25">25% (Crítico)</option>
+                <option value="50">50% (Medio)</option>
+              </select>
+            </div>
           </div>
         </div>
+
+        <!-- Configuración de División Visual por Paquetes (desactivado por defecto) -->
+        <div id="edit-prod-pack-box" class="p-3 rounded-xl theme-input border space-y-2">
+          <label class="flex items-center gap-2.5 cursor-pointer text-xs font-bold theme-text-main">
+            <input id="edit-prod-pack-enabled" type="checkbox" onchange="toggleEditProductPackFields()" class="custom-chk" />
+            <span>Agrupar por Paquetes (ej. pack de 6 bebidas)</span>
+          </label>
+          <div id="edit-prod-pack-details" class="hidden pt-1 flex items-center justify-between gap-2 text-xs">
+            <label for="edit-prod-pack-size" class="theme-text-muted font-semibold">Unidades por paquete:</label>
+            <input id="edit-prod-pack-size" type="number" min="2" value="6" class="w-24 px-2.5 py-1.5 theme-surface border rounded-lg font-bold text-center outline-none" />
+          </div>
+        </div>
+
         <div class="flex items-center justify-between gap-2 pt-2">
           <button type="button" onclick="deleteProduct()" class="px-3 py-2 rounded-xl bg-red-800/15 hover:bg-red-800/25 text-red-700 border border-red-700/30 text-xs font-bold">Eliminar</button>
           <div class="flex gap-2">
@@ -624,17 +795,23 @@
         <input type="hidden" id="edit-prov-id" />
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <div>
-            <label for="edit-prov-name" class="block text-xs font-bold theme-text-main mb-1">Nombre *</label>
-            <input id="edit-prov-name" type="text" required class="w-full px-3 py-2 theme-input border rounded-xl text-sm outline-none" />
+            <label for="edit-prov-name" class="block text-xs font-bold theme-text-main mb-1">Nombre / Tienda *</label>
+            <input id="edit-prov-name" type="text" required class="w-full px-3 py-2 theme-input border rounded-xl outline-none" />
           </div>
-          <div>
+          <div id="edit-prov-wa-wrapper">
             <label for="edit-prov-wa" class="block text-xs font-bold theme-text-main mb-1">WhatsApp (opcional)</label>
-            <input id="edit-prov-wa" type="tel" placeholder="Ej. 56912345678" class="w-full px-3 py-2 theme-input border rounded-xl text-sm outline-none" />
+            <input id="edit-prov-wa" type="tel" placeholder="Ej. 56912345678" class="w-full px-3 py-2 theme-input border rounded-xl outline-none" />
           </div>
         </div>
-        <div>
-          <label for="edit-prov-cat" class="block text-xs font-bold theme-text-main mb-1">Rubro</label>
-          <input id="edit-prov-cat" type="text" class="w-full px-3 py-2 theme-input border rounded-xl text-sm outline-none" />
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex-1 min-w-[160px]">
+            <label for="edit-prov-cat" class="block text-xs font-bold theme-text-main mb-1">Rubro</label>
+            <input id="edit-prov-cat" type="text" class="w-full px-3 py-2 theme-input border rounded-xl outline-none" />
+          </div>
+          <label class="inline-flex items-center gap-2 cursor-pointer text-xs font-bold theme-text-main pt-4 select-none">
+            <input id="edit-prov-is-presencial" type="checkbox" onchange="toggleEditProviderPresencialMode()" class="custom-chk" />
+            <span>🛍️ Compra Presencial</span>
+          </label>
         </div>
 
         <div class="space-y-1.5 pt-1">
@@ -642,7 +819,7 @@
             <label class="block text-xs font-bold theme-text-main">Productos asignados a este proveedor</label>
             <span id="edit-prov-selected-count" class="text-[11px] font-bold theme-primary-text">0 seleccionados</span>
           </div>
-          <input id="edit-prov-prod-filter" type="search" oninput="renderEditProviderProductsList()" placeholder="Filtrar productos para marcar..." class="w-full px-3 py-1.5 theme-input border rounded-xl text-xs outline-none" />
+          <input id="edit-prov-prod-filter" type="search" oninput="renderEditProviderProductsList()" placeholder="Filtrar productos para marcar..." class="w-full px-3 py-1.5 theme-input border rounded-xl outline-none" />
           <div id="edit-prov-products-list" class="max-h-44 overflow-y-auto theme-input border rounded-xl p-2 space-y-1.5"></div>
         </div>
 
@@ -673,7 +850,7 @@
       <div id="edit-order-items-container" class="space-y-2 overflow-y-auto pr-1 flex-1"></div>
 
       <div id="edit-order-add-row" class="flex items-center gap-2 pt-2 border-t theme-border">
-        <select id="edit-order-extra-select" class="flex-1 px-3 py-2 theme-input border rounded-xl text-xs font-semibold outline-none"></select>
+        <select id="edit-order-extra-select" class="flex-1 px-3 py-2 theme-input border rounded-xl font-semibold outline-none"></select>
         <button type="button" onclick="addExtraItemToEditedOrder()" class="px-3 py-2 rounded-xl theme-muted-btn border text-xs font-bold">
           + Añadir
         </button>
@@ -727,11 +904,11 @@
       <form onsubmit="submitChangePassword(event)" class="space-y-3">
         <div>
           <label for="new-pass-1" class="block text-xs font-bold theme-text-main mb-1">Nueva contraseña *</label>
-          <input id="new-pass-1" type="password" minlength="6" required placeholder="Mínimo 6 caracteres" class="w-full px-3 py-2 theme-input border rounded-xl text-sm outline-none" />
+          <input id="new-pass-1" type="password" minlength="6" required placeholder="Mínimo 6 caracteres" class="w-full px-3 py-2 theme-input border rounded-xl outline-none" />
         </div>
         <div>
           <label for="new-pass-2" class="block text-xs font-bold theme-text-main mb-1">Repetir nueva contraseña *</label>
-          <input id="new-pass-2" type="password" minlength="6" required placeholder="Repite la contraseña" class="w-full px-3 py-2 theme-input border rounded-xl text-sm outline-none" />
+          <input id="new-pass-2" type="password" minlength="6" required placeholder="Repite la contraseña" class="w-full px-3 py-2 theme-input border rounded-xl outline-none" />
         </div>
         <p id="change-pass-error" class="hidden text-xs font-bold text-red-700 bg-red-800/15 border border-red-700/30 p-2 rounded-xl"></p>
         <div class="flex justify-end gap-2 pt-1">
@@ -750,7 +927,6 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_j_SWYDwWgN4ntxyO37P1GA_cB-PLfsf';
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Cliente auxiliar sin persistencia para crear empleados desde Equipo sin cerrar sesión de Admin
     const dbSignupHelper = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: {
         persistSession: false,
@@ -768,14 +944,246 @@
     let teamMembers = [];
     let onlyCritical = false;
 
+    // Configuración de las 3 columnas de Stock (se sincroniza en localStorage + locales.config)
+    const DEFAULT_COLUMNS = ['Barra / Café', 'Cocina / Insumos', 'Bodega / Desechables'];
+    let stockColumns = [...DEFAULT_COLUMNS];
+
+    // Metadatos por producto (paquetes, modo %, columna asignada) con respaldo instantáneo local + BD
+    let productMetaCache = {};
+
     // Estado de modales
     let productCreateMode = 'single';
     let editProviderSelectedProductIds = new Set();
     let editingOrderId = null;
     let editingOrderItems = [];
 
-    // Estado del flujo QR en celular
+    // Flujo QR
     let scannedQrOrder = null;
+
+    // Sincronización en tiempo real + cola optimista para restas ultra fluidas
+    let realtimeChannel = null;
+    let pollingIntervalId = null;
+    let syncDebounceTimer = null;
+    let isSyncingNow = false;
+    const pendingStockMutations = new Map(); // Evita parpadeos mientras se confirma cada resta en BD
+    const POLLING_INTERVAL_MS = 8000;
+
+    // =========================================================================
+    // HELPERS DE METADATOS DE PRODUCTO (PAQUETES, PORCENTAJE %, COLUMNA)
+    // =========================================================================
+    function getMetaStorageKey() {
+      return currentLocal?.id ? `tacita_prod_meta_${currentLocal.id}` : 'tacita_prod_meta_default';
+    }
+
+    function loadLocalProductMeta() {
+      try {
+        const raw = localStorage.getItem(getMetaStorageKey());
+        productMetaCache = raw ? JSON.parse(raw) : {};
+      } catch (_) {
+        productMetaCache = {};
+      }
+    }
+
+    function saveLocalProductMeta() {
+      try {
+        localStorage.setItem(getMetaStorageKey(), JSON.stringify(productMetaCache));
+      } catch (_) {}
+    }
+
+    function getProductMeta(prod) {
+      const localM = productMetaCache[prod.id] || {};
+      const isPercent = prod.es_porcentaje !== undefined && prod.es_porcentaje !== null
+        ? Boolean(prod.es_porcentaje)
+        : Boolean(localM.es_porcentaje);
+
+      const packEnabled = prod.paquete_activo !== undefined && prod.paquete_activo !== null
+        ? Boolean(prod.paquete_activo)
+        : Boolean(localM.paquete_activo);
+
+      const packSize = Math.max(2, Number(prod.unidades_por_paquete || localM.unidades_por_paquete || 6));
+      const colIndex = [1, 2, 3].includes(Number(prod.columna_stock))
+        ? Number(prod.columna_stock)
+        : ([1, 2, 3].includes(Number(localM.columna_stock)) ? Number(localM.columna_stock) : 1);
+
+      return { isPercent, packEnabled, packSize, colIndex };
+    }
+
+    function setProductMeta(prodId, meta) {
+      productMetaCache[prodId] = {
+        es_porcentaje: Boolean(meta.isPercent),
+        paquete_activo: Boolean(meta.packEnabled),
+        unidades_por_paquete: Math.max(2, Number(meta.packSize) || 6),
+        columna_stock: [1, 2, 3].includes(Number(meta.colIndex)) ? Number(meta.colIndex) : 1
+      };
+      saveLocalProductMeta();
+    }
+
+    // Cálculo de reposición sugerida (Unidades, Paquetes o Porcentaje %)
+    function computeSuggestedOrder(prod) {
+      const meta = getProductMeta(prod);
+
+      if (meta.isPercent) {
+        // Producto por % (siempre es 1 envase grande; si está en o bajo umbral se pide 1 unidad)
+        return {
+          qty: 1,
+          unitLabel: prod.unidad || 'unid.',
+          hintText: `Envase al ${prod.stock_actual}% (pedir 1 reposición)`
+        };
+      }
+
+      const missingUnits = Math.max(1, prod.stock_maximo - prod.stock_actual);
+
+      if (meta.packEnabled && meta.packSize > 1) {
+        // Ej: 10 restantes, ideal 18 -> faltan 8 -> 8 / 6 = 1.33 -> redondea a 1 paquete (6 unid.)
+        const packs = Math.max(1, Math.round(missingUnits / meta.packSize));
+        return {
+          qty: packs,
+          unitLabel: packs === 1 ? `paquete (x${meta.packSize})` : `paquetes (x${meta.packSize})`,
+          hintText: `Faltan ${missingUnits} ${prod.unidad} → ${packs} paq. de ${meta.packSize}`
+        };
+      }
+
+      return {
+        qty: missingUnits,
+        unitLabel: prod.unidad,
+        hintText: `Actual: ${prod.stock_actual} / Ideal: ${prod.stock_maximo} ${prod.unidad}`
+      };
+    }
+
+    // =========================================================================
+    // CONFIGURACIÓN DE LAS 3 COLUMNAS DE STOCK
+    // =========================================================================
+    function getColumnsStorageKey() {
+      return currentLocal?.id ? `tacita_cols_${currentLocal.id}` : 'tacita_cols_default';
+    }
+
+    function loadStockColumns() {
+      if (currentLocal && Array.isArray(currentLocal.columnas_stock) && currentLocal.columnas_stock.length === 3) {
+        stockColumns = [...currentLocal.columnas_stock];
+      } else {
+        try {
+          const raw = localStorage.getItem(getColumnsStorageKey());
+          const parsed = raw ? JSON.parse(raw) : null;
+          stockColumns = Array.isArray(parsed) && parsed.length === 3 ? parsed : [...DEFAULT_COLUMNS];
+        } catch (_) {
+          stockColumns = [...DEFAULT_COLUMNS];
+        }
+      }
+      const c1 = document.getElementById('col-name-1');
+      const c2 = document.getElementById('col-name-2');
+      const c3 = document.getElementById('col-name-3');
+      if (c1) c1.value = stockColumns[0];
+      if (c2) c2.value = stockColumns[1];
+      if (c3) c3.value = stockColumns[2];
+    }
+
+    async function saveColumnNames(e) {
+      e.preventDefault();
+      if (!isAdmin()) return;
+
+      const c1 = document.getElementById('col-name-1').value.trim() || DEFAULT_COLUMNS[0];
+      const c2 = document.getElementById('col-name-2').value.trim() || DEFAULT_COLUMNS[1];
+      const c3 = document.getElementById('col-name-3').value.trim() || DEFAULT_COLUMNS[2];
+      stockColumns = [c1, c2, c3];
+
+      localStorage.setItem(getColumnsStorageKey(), JSON.stringify(stockColumns));
+
+      // Intentar guardar también en Supabase si existe columna columnas_stock en locales
+      if (currentLocal?.id) {
+        await db.from('locales').update({ columnas_stock: stockColumns }).eq('id', currentLocal.id);
+      }
+
+      renderProducts();
+      showToast('✓ Nombres de columnas actualizados');
+    }
+
+    // =========================================================================
+    // SINCRONIZACIÓN EN TIEMPO REAL + ACTUALIZACIÓN PERIÓDICA ENTRE DISPOSITIVOS
+    // =========================================================================
+    function setSyncBadgeState(state) {
+      const badge = document.getElementById('live-sync-indicator');
+      const dot = document.getElementById('live-sync-dot');
+      const label = document.getElementById('live-sync-label');
+      if (!badge || !dot || !label) return;
+
+      badge.classList.remove('hidden');
+
+      if (state === 'syncing') {
+        dot.className = 'w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping';
+        label.textContent = 'Sincronizando...';
+      } else if (state === 'offline') {
+        dot.className = 'w-1.5 h-1.5 rounded-full bg-red-600';
+        label.textContent = 'Sin red';
+      } else {
+        dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse';
+        label.textContent = 'En vivo';
+      }
+    }
+
+    function scheduleBackgroundSync() {
+      if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
+      syncDebounceTimer = setTimeout(() => {
+        loadAllData(true);
+      }, 350);
+    }
+
+    function startLiveSync() {
+      stopLiveSync();
+      if (!currentLocal) return;
+      const localId = currentLocal.id;
+      setSyncBadgeState('live');
+
+      realtimeChannel = db
+        .channel(`sync-local-${localId}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'productos', filter: `local_id=eq.${localId}` }, () => scheduleBackgroundSync())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'proveedores', filter: `local_id=eq.${localId}` }, () => scheduleBackgroundSync())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos', filter: `local_id=eq.${localId}` }, () => scheduleBackgroundSync())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'movimientos_stock', filter: `local_id=eq.${localId}` }, () => scheduleBackgroundSync())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'miembros_local', filter: `local_id=eq.${localId}` }, () => scheduleBackgroundSync())
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') setSyncBadgeState('live');
+          else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setSyncBadgeState('offline');
+        });
+
+      pollingIntervalId = setInterval(() => {
+        if (document.visibilityState === 'visible' && currentLocal) {
+          loadAllData(true);
+        }
+      }, POLLING_INTERVAL_MS);
+    }
+
+    function stopLiveSync() {
+      if (realtimeChannel) {
+        db.removeChannel(realtimeChannel);
+        realtimeChannel = null;
+      }
+      if (pollingIntervalId) {
+        clearInterval(pollingIntervalId);
+        pollingIntervalId = null;
+      }
+      if (syncDebounceTimer) {
+        clearTimeout(syncDebounceTimer);
+        syncDebounceTimer = null;
+      }
+      document.getElementById('live-sync-indicator')?.classList.add('hidden');
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && currentLocal) {
+        loadAllData(true);
+      }
+    });
+
+    window.addEventListener('online', () => {
+      if (currentLocal) {
+        setSyncBadgeState('syncing');
+        loadAllData(true);
+      }
+    });
+
+    window.addEventListener('offline', () => {
+      setSyncBadgeState('offline');
+    });
 
     // =========================================================================
     // DISEÑO PERSONALIZADO POR PERFIL (CLARO/OSCURO + COLOR PRINCIPAL)
@@ -786,7 +1194,6 @@
     };
 
     function getThemeStorageKey() {
-      // Guarda un diseño distinto por perfil de usuario
       return currentMember?.id
         ? `tacita_stock_design_profile_${currentMember.id}`
         : 'tacita_stock_design_guest';
@@ -848,7 +1255,6 @@
       const pInput = document.getElementById('color-primary-input');
       if (pInput) pInput.value = prefs.primary;
 
-      // Actualizar favicon dinámicamente con el color principal del perfil
       const fav = document.getElementById('dynamic-favicon');
       if (fav) {
         const encodedColor = encodeURIComponent(prefs.primary);
@@ -898,18 +1304,15 @@
 
       if (a === 0) return 0;
 
-      // Tramo 1: [0 .. min] mapea linealmente de 0% a 25%
       if (min > 0 && a <= min) {
         return Math.round((a / min) * 25);
       }
 
-      // Tramo 2: [min .. max] mapea linealmente de 25% a 75%
       if (a <= max) {
         const ratio = (a - min) / (max - min);
         return Math.round(25 + ratio * 50);
       }
 
-      // Tramo 3: sobre stock ideal (> max) avanza suavemente de 75% hacia 100%
       const extraRatio = Math.min(1, (a - max) / Math.max(1, max * 0.5));
       return Math.min(100, Math.round(75 + extraRatio * 25));
     }
@@ -922,11 +1325,13 @@
       return r === 'admin' || r === 'owner' || r === 'administrador';
     }
 
+    let toastTimer = null;
     function showToast(msg) {
       const box = document.getElementById('toast-box');
       box.textContent = msg;
       box.classList.remove('hidden');
-      setTimeout(() => box.classList.add('hidden'), 2500);
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => box.classList.add('hidden'), 1800);
     }
 
     async function handleLogin(e) {
@@ -954,10 +1359,11 @@
     }
 
     async function handleLogout() {
+      stopLiveSync();
       await db.auth.signOut();
       currentMember = null;
       currentLocal = null;
-      loadThemePreferences(); // Vuelve al diseño de invitado al cerrar sesión
+      loadThemePreferences();
       document.getElementById('view-app').classList.add('hidden');
       document.getElementById('header-actions').classList.add('hidden');
       document.getElementById('view-login').classList.remove('hidden');
@@ -1011,7 +1417,7 @@
     async function initSession(user) {
       const { data: member, error } = await db
         .from('miembros_local')
-        .select('id, local_id, nombre_mostrar, rol, pin_pedido, locales(id, nombre, slug)')
+        .select('id, local_id, nombre_mostrar, rol, pin_pedido, locales(*)')
         .eq('user_id', user.id)
         .eq('activo', true)
         .limit(1)
@@ -1027,8 +1433,9 @@
       currentMember = member;
       currentLocal = member.locales;
 
-      // Cargar el diseño guardado específicamente para este perfil
       loadThemePreferences();
+      loadLocalProductMeta();
+      loadStockColumns();
 
       document.getElementById('header-local-name').textContent = currentLocal ? currentLocal.nombre : 'Stock Tacita de Café';
       document.getElementById('view-login').classList.add('hidden');
@@ -1041,7 +1448,9 @@
       }
 
       applyRolePermissions();
-      await loadAllData();
+      checkSaturdayOfficialWindow();
+      await loadAllData(false);
+      startLiveSync();
     }
 
     function applyRolePermissions() {
@@ -1049,16 +1458,16 @@
       document.getElementById('header-user-info').textContent = `En turno: ${currentMember.nombre_mostrar} (${currentMember.rol})`;
 
       const nav = document.getElementById('main-tabs-nav');
-      const tabEquipoBtn = document.getElementById('tab-btn-equipo');
+      const tabConfigBtn = document.getElementById('tab-btn-config');
       if (adminActive) {
-        tabEquipoBtn.classList.remove('hidden');
-        nav.classList.remove('grid-cols-4');
-        nav.classList.add('grid-cols-5');
-      } else {
-        tabEquipoBtn.classList.add('hidden');
+        tabConfigBtn.classList.remove('hidden');
         nav.classList.remove('grid-cols-5');
-        nav.classList.add('grid-cols-4');
-        if (!document.getElementById('tab-equipo').classList.contains('hidden')) {
+        nav.classList.add('grid-cols-6');
+      } else {
+        tabConfigBtn.classList.add('hidden');
+        nav.classList.remove('grid-cols-6');
+        nav.classList.add('grid-cols-5');
+        if (!document.getElementById('tab-config').classList.contains('hidden')) {
           switchTab('stock');
         }
       }
@@ -1069,56 +1478,90 @@
       document.getElementById('btn-clear-orders').classList.toggle('hidden', !adminActive);
     }
 
-    async function loadAllData() {
-      if (!currentLocal) return;
-      const localId = currentLocal.id;
+    async function loadAllData(isBackground = false) {
+      if (!currentLocal || isSyncingNow) return;
+      isSyncingNow = true;
+      setSyncBadgeState('syncing');
 
-      const queries = [
-        db.from('proveedores').select('*').eq('local_id', localId).order('nombre'),
-        db.from('productos').select('*').eq('local_id', localId).order('nombre'),
-        db.from('pedidos').select('*').eq('local_id', localId).neq('estado', 'borrador_qr').order('created_at', { ascending: false }).limit(30),
-        db.from('movimientos_stock').select('*').eq('local_id', localId).order('created_at', { ascending: false }).limit(50)
-      ];
+      try {
+        const localId = currentLocal.id;
 
-      if (isAdmin()) {
-        queries.push(
-          db.from('miembros_local').select('*').eq('local_id', localId).order('nombre_mostrar')
+        const savedCheckedIds = new Set(
+          Array.from(document.querySelectorAll('.order-chk:checked')).map(el => el.dataset.id)
         );
+        const savedQuantities = {};
+        document.querySelectorAll('.order-qty').forEach(el => {
+          savedQuantities[el.dataset.id] = el.value;
+        });
+
+        const queries = [
+          db.from('proveedores').select('*').eq('local_id', localId).order('nombre'),
+          db.from('productos').select('*').eq('local_id', localId).order('nombre'),
+          db.from('pedidos').select('*').eq('local_id', localId).neq('estado', 'borrador_qr').order('created_at', { ascending: false }).limit(60),
+          db.from('movimientos_stock').select('*').eq('local_id', localId).order('created_at', { ascending: false }).limit(250)
+        ];
+
+        if (isAdmin()) {
+          queries.push(
+            db.from('miembros_local').select('*').eq('local_id', localId).order('nombre_mostrar')
+          );
+        }
+
+        const results = await Promise.all(queries);
+
+        if (results[0].data) providers = results[0].data;
+        if (results[1].data) {
+          // Respetar mutaciones optimistas aún en vuelo para que las restas rápidas nunca retrocedan
+          products = results[1].data.map(row => {
+            if (pendingStockMutations.has(row.id)) {
+              return { ...row, stock_actual: pendingStockMutations.get(row.id) };
+            }
+            return row;
+          });
+        }
+        if (results[2].data) orders = results[2].data;
+        if (results[3].data) auditLogs = results[3].data;
+
+        if (isAdmin() && results[4]?.data) {
+          teamMembers = results[4].data;
+          const activeEl = document.activeElement;
+          const isEditingTeam = activeEl && document.getElementById('team-members-list')?.contains(activeEl);
+          if (!isEditingTeam) {
+            renderTeamMembers();
+          }
+        }
+
+        renderProducts();
+        renderProviders();
+        renderOrderProviderSelect(isBackground ? { savedCheckedIds, savedQuantities } : null);
+        renderOrdersHistory();
+        renderAuditLogs();
+        setSyncBadgeState('live');
+      } catch (_) {
+        setSyncBadgeState('offline');
+      } finally {
+        isSyncingNow = false;
       }
-
-      const results = await Promise.all(queries);
-
-      providers = results[0].data || [];
-      products = results[1].data || [];
-      orders = results[2].data || [];
-      auditLogs = results[3].data || [];
-
-      if (isAdmin() && results[4]) {
-        teamMembers = results[4].data || [];
-        renderTeamMembers();
-      }
-
-      renderProducts();
-      renderProviders();
-      renderOrderProviderSelect();
-      renderOrdersHistory();
-      renderAuditLogs();
     }
 
     function switchTab(tab) {
-      const allTabs = ['stock', 'pedidos', 'proveedores', 'bitacora', 'equipo'];
+      const allTabs = ['stock', 'pedidos', 'proveedores', 'bitacora', 'resumen', 'config'];
       allTabs.forEach(t => {
         const section = document.getElementById(`tab-${t}`);
         const btn = document.getElementById(`tab-btn-${t}`);
         if (!section || !btn) return;
         section.classList.toggle('hidden', t !== tab);
         btn.className = t === tab
-          ? 'py-2.5 px-2 rounded-xl text-xs font-bold theme-primary-bg transition'
-          : 'py-2.5 px-2 rounded-xl text-xs font-bold theme-text-muted hover:opacity-80 transition';
-        if (t === 'equipo' && !isAdmin()) {
+          ? 'py-2.5 px-1.5 rounded-xl text-xs font-bold theme-primary-bg transition truncate'
+          : 'py-2.5 px-1.5 rounded-xl text-xs font-bold theme-text-muted hover:opacity-80 transition truncate';
+        if (t === 'config' && !isAdmin()) {
           btn.classList.add('hidden');
         }
       });
+
+      if (tab === 'resumen') {
+        generateWeeklySummary(false);
+      }
     }
 
     function toggleCriticalFilter() {
@@ -1131,10 +1574,10 @@
     }
 
     // =========================================================================
-    // RENDER Y GESTIÓN DE STOCK / PRODUCTOS (BARRA 25% CRÍTICO / 75% IDEAL)
+    // RENDER EN 3 COLUMNAS + RESTA OPTIMISTA INSTANTÁNEA (0 LAG)
     // =========================================================================
     function renderProducts() {
-      const container = document.getElementById('products-list');
+      const container = document.getElementById('stock-columns-container');
       const search = (document.getElementById('stock-search').value || '').toLowerCase();
       const criticalCount = products.filter(p => p.stock_actual <= p.stock_minimo).length;
       const adminActive = isAdmin();
@@ -1154,77 +1597,169 @@
       });
 
       container.innerHTML = '';
-      if (filtered.length === 0) {
-        container.innerHTML = '<div class="sm:col-span-2 p-8 text-center theme-surface rounded-2xl border border-dashed text-xs theme-text-muted">No hay productos para mostrar.</div>';
-        return;
-      }
 
-      filtered.forEach(p => {
-        const prov = providers.find(pr => pr.id === p.proveedor_id);
-        const isCritical = p.stock_actual <= p.stock_minimo;
-        const pct = computeStockBarPercent(p.stock_actual, p.stock_minimo, p.stock_maximo);
+      [1, 2, 3].forEach(colIdx => {
+        const colTitle = stockColumns[colIdx - 1] || `Columna ${colIdx}`;
+        const colProducts = filtered.filter(p => getProductMeta(p).colIndex === colIdx);
 
-        const card = document.createElement('div');
-        card.className = `theme-surface border ${isCritical ? 'border-red-700/70' : ''} rounded-2xl p-4 shadow-xs space-y-3`;
-        card.innerHTML = `
-          <div class="flex items-start justify-between gap-2">
-            <div class="min-w-0">
-              <h3 class="font-display font-bold text-sm theme-text-main truncate">${p.nombre}</h3>
-              <p class="text-[11px] theme-text-muted truncate">${prov ? prov.nombre : 'Sin proveedor'} • Mín: ${p.stock_minimo} • Ideal: ${p.stock_maximo} ${p.unidad}</p>
-            </div>
-            <div class="flex items-center gap-1.5 flex-shrink-0">
-              <span class="text-[11px] font-extrabold px-2.5 py-1 rounded-lg ${isCritical ? 'bg-red-700/20 text-red-600' : 'bg-emerald-700/20 text-emerald-600'}">
-                ${p.stock_actual} ${p.unidad}
-              </span>
-              ${adminActive ? `
-                <button type="button" onclick="openEditProductModal('${p.id}')" title="Editar producto y stock" class="px-2 py-1 rounded-lg theme-muted-btn hover:opacity-80 border text-[11px] font-bold transition">
-                  ✏️
-                </button>
-              ` : ''}
-            </div>
+        const colWrap = document.createElement('div');
+        colWrap.className = 'theme-surface border rounded-2xl p-3 sm:p-3.5 space-y-2.5 shadow-xs';
+        colWrap.innerHTML = `
+          <div class="flex items-center justify-between pb-2 border-b theme-border px-1">
+            <h2 class="font-display font-extrabold text-xs sm:text-sm theme-text-main truncate">${colTitle}</h2>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full theme-primary-badge">${colProducts.length}</span>
           </div>
-
-          <!-- Barra de progreso fija en verde/rojo con marcas al 25% (crítico) y 75% (ideal) -->
-          <div class="relative w-full h-2.5 bg-stone-500/25 rounded-full overflow-hidden">
-            <div class="h-full ${isCritical ? 'bg-red-600' : 'bg-emerald-600'} transition-all duration-200" style="width: ${pct}%"></div>
-            <div title="Mínimo crítico (25%)" class="absolute top-0 bottom-0 left-[25%] w-[2px] bg-red-600/80 z-10"></div>
-            <div title="Stock ideal (75%)" class="absolute top-0 bottom-0 left-[75%] w-[2px] bg-emerald-500/90 z-10"></div>
-          </div>
-
-          <div class="flex items-center justify-between gap-2 pt-1">
-            <button type="button" onclick="adjustStock('${p.id}', -1)" class="flex-1 py-2.5 rounded-xl theme-input hover:bg-red-800/15 theme-text-main hover:text-red-600 border font-display font-extrabold text-sm transition active:scale-95">
-              − 1
-            </button>
-            <button type="button" onclick="adjustStock('${p.id}', 1)" class="px-4 py-2.5 rounded-xl theme-input hover:bg-emerald-800/15 theme-text-main border font-display font-bold text-sm transition active:scale-95">
-              + 1
-            </button>
-          </div>
+          <div class="space-y-2.5" id="stock-col-body-${colIdx}"></div>
         `;
-        container.appendChild(card);
+        container.appendChild(colWrap);
+
+        const colBody = colWrap.querySelector(`#stock-col-body-${colIdx}`);
+        if (colProducts.length === 0) {
+          colBody.innerHTML = '<div class="p-4 text-center rounded-xl border border-dashed theme-border text-[11px] theme-text-muted">Sin productos en esta columna.</div>';
+          return;
+        }
+
+        colProducts.forEach(p => {
+          const prov = providers.find(pr => pr.id === p.proveedor_id);
+          const meta = getProductMeta(p);
+          const isCritical = p.stock_actual <= p.stock_minimo;
+          const pct = meta.isPercent
+            ? Math.max(0, Math.min(100, Number(p.stock_actual) || 0))
+            : computeStockBarPercent(p.stock_actual, p.stock_minimo, p.stock_maximo);
+
+          // Etiqueta de cantidad (Unidades, Paquetes visuales o %)
+          let stockBadgeText = `${p.stock_actual} ${p.unidad}`;
+          let subDetailText = `${prov ? prov.nombre : 'Sin prov.'} • Mín: ${p.stock_minimo} • Ideal: ${p.stock_maximo}`;
+
+          if (meta.isPercent) {
+            stockBadgeText = `${p.stock_actual}%`;
+            subDetailText = `${prov ? prov.nombre : 'Sin prov.'} • Envase 1 unid. (Pedir ≤ ${p.stock_minimo}%)`;
+          } else if (meta.packEnabled) {
+            const fullPacks = Math.floor(p.stock_actual / meta.packSize);
+            const looseUnits = p.stock_actual % meta.packSize;
+            const packLabel = looseUnits > 0
+              ? `${fullPacks} paq. + ${looseUnits}`
+              : `${fullPacks} paq.`;
+            stockBadgeText = `${p.stock_actual} ${p.unidad} (${packLabel})`;
+            subDetailText = `${prov ? prov.nombre : 'Sin prov.'} • Pack x${meta.packSize} • Ideal: ${p.stock_maximo}`;
+          }
+
+          const card = document.createElement('div');
+          card.id = `prod-card-${p.id}`;
+          card.className = `theme-input border ${isCritical ? 'border-red-700/75' : ''} rounded-xl p-3 space-y-2.5 transition-colors`;
+          card.innerHTML = `
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <h3 class="font-display font-bold text-xs sm:text-sm theme-text-main truncate">${p.nombre}</h3>
+                <p class="text-[10px] theme-text-muted truncate">${subDetailText}</p>
+              </div>
+              <div class="flex items-center gap-1 flex-shrink-0">
+                <span id="prod-badge-${p.id}" class="text-[11px] font-extrabold px-2 py-0.5 rounded-lg ${isCritical ? 'bg-red-700/20 text-red-600' : 'bg-emerald-700/20 text-emerald-600'}">
+                  ${stockBadgeText}
+                </span>
+                ${adminActive ? `
+                  <button type="button" onclick="openEditProductModal('${p.id}')" title="Editar producto y stock" class="px-1.5 py-0.5 rounded-lg theme-surface hover:opacity-80 border text-[11px] font-bold transition">
+                    ✏️
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+
+            <div class="relative w-full h-2 bg-stone-500/25 rounded-full overflow-hidden">
+              <div id="prod-bar-${p.id}" class="h-full ${isCritical ? 'bg-red-600' : 'bg-emerald-600'} transition-all duration-150" style="width: ${pct}%"></div>
+              <div title="Mínimo crítico (25%)" class="absolute top-0 bottom-0 left-[25%] w-[2px] bg-red-600/80 z-10"></div>
+              <div title="Stock ideal (75%)" class="absolute top-0 bottom-0 left-[75%] w-[2px] bg-emerald-500/90 z-10"></div>
+            </div>
+
+            <div class="flex items-center justify-between gap-2 pt-0.5">
+              <button type="button" onclick="adjustStock('${p.id}', -1)" class="flex-1 py-2 rounded-xl theme-surface hover:bg-red-800/15 theme-text-main hover:text-red-600 border font-display font-extrabold text-sm transition active:scale-95 select-none">
+                ${meta.isPercent ? '− 25%' : '− 1'}
+              </button>
+              <button type="button" onclick="adjustStock('${p.id}', 1)" class="px-3.5 py-2 rounded-xl theme-surface hover:bg-emerald-800/15 theme-text-main border font-display font-bold text-sm transition active:scale-95 select-none">
+                ${meta.isPercent ? '+ 25%' : '+ 1'}
+              </button>
+            </div>
+          `;
+          colBody.appendChild(card);
+        });
       });
     }
 
-    async function adjustStock(productId, delta) {
+    // Actualización Optimista Instantánea (0 ms de espera visual al tocar -1 / +1)
+    let stockSyncTimer = null;
+    async function adjustStock(productId, stepSign) {
       const prod = products.find(p => p.id === productId);
       if (!prod) return;
-      if (delta < 0 && prod.stock_actual <= 0) return;
 
-      const { data: nuevoStock, error } = await db.rpc('ajustar_stock', {
+      const meta = getProductMeta(prod);
+      const delta = meta.isPercent ? (stepSign * 25) : stepSign;
+
+      if (delta < 0 && prod.stock_actual <= 0) return;
+      if (meta.isPercent && delta > 0 && prod.stock_actual >= 100) return;
+
+      const prevStock = prod.stock_actual;
+      const optimisticStock = meta.isPercent
+        ? Math.max(0, Math.min(100, prevStock + delta))
+        : Math.max(0, prevStock + delta);
+
+      if (optimisticStock === prevStock) return;
+
+      // 1. Actualizar estado en memoria y UI inmediatamente (cero latencia)
+      prod.stock_actual = optimisticStock;
+      pendingStockMutations.set(productId, optimisticStock);
+      renderProducts();
+      showToast(meta.isPercent ? `${prod.nombre}: ${optimisticStock}%` : `${prod.nombre}: ${optimisticStock} ${prod.unidad}`);
+
+      // 2. Enviar RPC en segundo plano sin bloquear el siguiente toque
+      const { data: serverStock, error } = await db.rpc('ajustar_stock', {
         p_producto_id: productId,
         p_delta: delta,
         p_tipo: delta < 0 ? 'consumo' : 'ajuste'
       });
 
       if (error) {
-        showToast('Error: ' + error.message);
+        // Revertir solo si falló en el servidor
+        pendingStockMutations.delete(productId);
+        prod.stock_actual = prevStock;
+        renderProducts();
+        showToast('Error al guardar: ' + error.message);
         return;
       }
 
-      prod.stock_actual = nuevoStock;
-      renderProducts();
-      renderOrderBuilder();
-      showToast(`${prod.nombre}: ${nuevoStock} ${prod.unidad}(s)`);
-      loadAllData();
+      // Confirmar valor oficial cuando ya no hay más clics pendientes encima
+      if (pendingStockMutations.get(productId) === optimisticStock) {
+        pendingStockMutations.delete(productId);
+        if (typeof serverStock === 'number') {
+          prod.stock_actual = serverStock;
+          renderProducts();
+        }
+      }
+
+      if (stockSyncTimer) clearTimeout(stockSyncTimer);
+      stockSyncTimer = setTimeout(() => {
+        loadAllData(true);
+      }, 900);
+    }
+
+    // =========================================================================
+    // MODALES DE CREACIÓN Y EDICIÓN DE PRODUCTOS (PAQUETES, %, COLUMNA)
+    // =========================================================================
+    function toggleNewProductPercentMode() {
+      const isPct = document.getElementById('prod-is-percent').checked;
+      document.getElementById('prod-unit-fields').classList.toggle('hidden', isPct);
+      document.getElementById('prod-percent-fields').classList.toggle('hidden', !isPct);
+    }
+
+    function toggleEditProductPercentMode() {
+      const isPct = document.getElementById('edit-prod-is-percent').checked;
+      document.getElementById('edit-prod-unit-fields').classList.toggle('hidden', isPct);
+      document.getElementById('edit-prod-percent-fields').classList.toggle('hidden', !isPct);
+      document.getElementById('edit-prod-pack-box').classList.toggle('hidden', isPct);
+    }
+
+    function toggleEditProductPackFields() {
+      const enabled = document.getElementById('edit-prod-pack-enabled').checked;
+      document.getElementById('edit-prod-pack-details').classList.toggle('hidden', !enabled);
     }
 
     function setProductCreateMode(mode) {
@@ -1246,9 +1781,20 @@
       bulkWrap.classList.toggle('hidden', mode !== 'bulk');
     }
 
+    function populateColumnSelectOptions(selectId, selectedCol = 1) {
+      const sel = document.getElementById(selectId);
+      if (!sel) return;
+      sel.innerHTML = [1, 2, 3].map(idx =>
+        `<option value="${idx}" ${idx === selectedCol ? 'selected' : ''}>${stockColumns[idx - 1]}</option>`
+      ).join('');
+    }
+
     function openProductModal() {
       const sel = document.getElementById('prod-provider');
       sel.innerHTML = '<option value="">Sin proveedor</option>' + providers.map(pr => `<option value="${pr.id}">${pr.nombre}</option>`).join('');
+      populateColumnSelectOptions('prod-column', 1);
+      document.getElementById('prod-is-percent').checked = false;
+      toggleNewProductPercentMode();
       setProductCreateMode('single');
       document.getElementById('product-modal').classList.remove('hidden');
     }
@@ -1259,80 +1805,122 @@
 
     async function saveNewProduct(e) {
       e.preventDefault();
-      const unidad = document.getElementById('prod-unit').value.trim();
       const proveedorId = document.getElementById('prod-provider').value || null;
-      const stockActual = parseInt(document.getElementById('prod-actual').value, 10) || 0;
-      const stockMin = parseInt(document.getElementById('prod-min').value, 10) || 0;
-      const stockMax = parseInt(document.getElementById('prod-max').value, 10) || 1;
+      const colIndex = parseInt(document.getElementById('prod-column').value, 10) || 1;
+      const isPercent = document.getElementById('prod-is-percent').checked;
 
-      let rowsToInsert = [];
+      let unidad = 'unid.';
+      let stockActual = 6;
+      let stockMin = 2;
+      let stockMax = 12;
 
+      if (isPercent) {
+        unidad = '%';
+        stockActual = parseInt(document.getElementById('prod-pct-actual').value, 10);
+        stockMin = parseInt(document.getElementById('prod-pct-min').value, 10);
+        stockMax = 100;
+      } else {
+        unidad = document.getElementById('prod-unit').value.trim() || 'unid.';
+        stockActual = parseInt(document.getElementById('prod-actual').value, 10) || 0;
+        stockMin = parseInt(document.getElementById('prod-min').value, 10) || 0;
+        stockMax = parseInt(document.getElementById('prod-max').value, 10) || 1;
+      }
+
+      let names = [];
       if (productCreateMode === 'single') {
         const nombre = document.getElementById('prod-name').value.trim();
         if (!nombre) {
           showToast('Escribe el nombre del producto');
           return;
         }
-        rowsToInsert.push({
-          local_id: currentLocal.id,
-          proveedor_id: proveedorId,
-          nombre,
-          unidad,
-          stock_actual: stockActual,
-          stock_minimo: stockMin,
-          stock_maximo: stockMax
-        });
+        names = [nombre];
       } else {
-        const rawBulk = document.getElementById('prod-bulk-names').value || '';
-        const names = rawBulk
+        names = (document.getElementById('prod-bulk-names').value || '')
           .split(',')
           .map(s => s.trim())
           .filter(Boolean);
-
         if (names.length === 0) {
           showToast('Ingresa al menos 1 producto separado por coma');
           return;
         }
-
-        rowsToInsert = names.map(nombre => ({
-          local_id: currentLocal.id,
-          proveedor_id: proveedorId,
-          nombre,
-          unidad,
-          stock_actual: stockActual,
-          stock_minimo: stockMin,
-          stock_maximo: stockMax
-        }));
       }
 
-      const { error } = await db.from('productos').insert(rowsToInsert);
+      const rowsToInsert = names.map(nombre => ({
+        local_id: currentLocal.id,
+        proveedor_id: proveedorId,
+        nombre,
+        unidad,
+        stock_actual: stockActual,
+        stock_minimo: stockMin,
+        stock_maximo: stockMax
+      }));
+
+      const { data: insertedRows, error } = await db.from('productos').insert(rowsToInsert).select('id');
 
       if (error) {
         showToast('Error: ' + error.message);
         return;
       }
 
+      // Guardar columna y modo % en caché local y opcionalmente en columnas de BD si existen
+      if (Array.isArray(insertedRows)) {
+        insertedRows.forEach(r => {
+          setProductMeta(r.id, {
+            isPercent,
+            packEnabled: false,
+            packSize: 6,
+            colIndex
+          });
+        });
+        const ids = insertedRows.map(r => r.id);
+        await db.from('productos').update({
+          columna_stock: colIndex,
+          es_porcentaje: isPercent,
+          paquete_activo: false,
+          unidades_por_paquete: 6
+        }).in('id', ids);
+      }
+
       e.target.reset();
-      document.getElementById('prod-unit').value = 'unidad';
       closeProductModal();
       showToast(`✓ ${rowsToInsert.length} producto(s) agregado(s)`);
-      await loadAllData();
+      await loadAllData(false);
     }
 
     function openEditProductModal(productId) {
       const prod = products.find(p => p.id === productId);
       if (!prod) return;
 
+      const meta = getProductMeta(prod);
+
       document.getElementById('edit-prod-id').value = prod.id;
       document.getElementById('edit-prod-name').value = prod.nombre;
-      document.getElementById('edit-prod-unit').value = prod.unidad;
-      document.getElementById('edit-prod-actual').value = prod.stock_actual;
-      document.getElementById('edit-prod-min').value = prod.stock_minimo;
-      document.getElementById('edit-prod-max').value = prod.stock_maximo;
 
       const sel = document.getElementById('edit-prod-provider');
       sel.innerHTML = '<option value="">Sin proveedor</option>' + providers.map(pr => `<option value="${pr.id}">${pr.nombre}</option>`).join('');
       sel.value = prod.proveedor_id || '';
+
+      populateColumnSelectOptions('edit-prod-column', meta.colIndex);
+
+      document.getElementById('edit-prod-is-percent').checked = meta.isPercent;
+      toggleEditProductPercentMode();
+
+      if (meta.isPercent) {
+        const nearestPct = [100, 75, 50, 25, 0].reduce((prev, curr) =>
+          Math.abs(curr - prod.stock_actual) < Math.abs(prev - prod.stock_actual) ? curr : prev
+        );
+        document.getElementById('edit-prod-pct-actual').value = String(nearestPct);
+        document.getElementById('edit-prod-pct-min').value = prod.stock_minimo >= 50 ? '50' : '25';
+      } else {
+        document.getElementById('edit-prod-unit').value = prod.unidad;
+        document.getElementById('edit-prod-actual').value = prod.stock_actual;
+        document.getElementById('edit-prod-min').value = prod.stock_minimo;
+        document.getElementById('edit-prod-max').value = prod.stock_maximo;
+      }
+
+      document.getElementById('edit-prod-pack-enabled').checked = meta.packEnabled;
+      document.getElementById('edit-prod-pack-size').value = meta.packSize;
+      toggleEditProductPackFields();
 
       document.getElementById('edit-product-modal').classList.remove('hidden');
     }
@@ -1348,14 +1936,26 @@
       if (!prod) return;
 
       const nombre = document.getElementById('edit-prod-name').value.trim();
-      const unidad = document.getElementById('edit-prod-unit').value.trim();
       const proveedorId = document.getElementById('edit-prod-provider').value || null;
-      const nuevoStock = parseInt(document.getElementById('edit-prod-actual').value, 10);
-      const stockMin = parseInt(document.getElementById('edit-prod-min').value, 10) || 0;
-      const stockMax = parseInt(document.getElementById('edit-prod-max').value, 10) || 1;
+      const colIndex = parseInt(document.getElementById('edit-prod-column').value, 10) || 1;
+      const isPercent = document.getElementById('edit-prod-is-percent').checked;
+      const packEnabled = !isPercent && document.getElementById('edit-prod-pack-enabled').checked;
+      const packSize = Math.max(2, parseInt(document.getElementById('edit-prod-pack-size').value, 10) || 6);
+
+      let unidad, nuevoStock, stockMin, stockMax;
+      if (isPercent) {
+        unidad = '%';
+        nuevoStock = parseInt(document.getElementById('edit-prod-pct-actual').value, 10);
+        stockMin = parseInt(document.getElementById('edit-prod-pct-min').value, 10);
+        stockMax = 100;
+      } else {
+        unidad = document.getElementById('edit-prod-unit').value.trim() || 'unid.';
+        nuevoStock = parseInt(document.getElementById('edit-prod-actual').value, 10);
+        stockMin = parseInt(document.getElementById('edit-prod-min').value, 10) || 0;
+        stockMax = parseInt(document.getElementById('edit-prod-max').value, 10) || 1;
+      }
 
       const delta = nuevoStock - prod.stock_actual;
-
       if (delta !== 0) {
         const { error: rpcError } = await db.rpc('ajustar_stock', {
           p_producto_id: id,
@@ -1384,9 +1984,17 @@
         return;
       }
 
+      setProductMeta(id, { isPercent, packEnabled, packSize, colIndex });
+      await db.from('productos').update({
+        columna_stock: colIndex,
+        es_porcentaje: isPercent,
+        paquete_activo: packEnabled,
+        unidades_por_paquete: packSize
+      }).eq('id', id);
+
       closeEditProductModal();
       showToast('✓ Producto actualizado');
-      await loadAllData();
+      await loadAllData(false);
     }
 
     async function deleteProduct() {
@@ -1401,36 +2009,105 @@
         return;
       }
 
+      delete productMetaCache[id];
+      saveLocalProductMeta();
       closeEditProductModal();
       showToast('Producto eliminado');
-      await loadAllData();
+      await loadAllData(false);
     }
 
     // =========================================================================
-    // PROVEEDORES (CREAR, EDITAR Y SELECCIÓN MÚLTIPLE DE PRODUCTOS)
+    // PROVEEDORES (CON OPCIÓN DE COMPRA PRESENCIAL)
     // =========================================================================
+    function getPresencialStorageKey() {
+      return currentLocal?.id ? `tacita_prov_presencial_${currentLocal.id}` : 'tacita_prov_presencial_default';
+    }
+
+    function getPresencialSet() {
+      try {
+        const raw = localStorage.getItem(getPresencialStorageKey());
+        return new Set(raw ? JSON.parse(raw) : []);
+      } catch (_) {
+        return new Set();
+      }
+    }
+
+    function setProviderPresencialLocal(provId, isPresencial) {
+      const set = getPresencialSet();
+      if (isPresencial) set.add(provId);
+      else set.delete(provId);
+      localStorage.setItem(getPresencialStorageKey(), JSON.stringify(Array.from(set)));
+    }
+
+    function isProviderPresencial(prov) {
+      if (!prov) return false;
+      if (prov.es_compra_presencial !== undefined && prov.es_compra_presencial !== null) {
+        return Boolean(prov.es_compra_presencial);
+      }
+      return getPresencialSet().has(prov.id);
+    }
+
+    function toggleNewProviderPresencialMode() {
+      const isPres = document.getElementById('prov-is-presencial').checked;
+      const waWrap = document.getElementById('prov-wa-wrapper');
+      const waInput = document.getElementById('prov-wa');
+      waInput.required = false;
+      waInput.setCustomValidity('');
+      if (isPres) {
+        waInput.value = '';
+        waInput.disabled = true;
+        waWrap.classList.add('opacity-45', 'pointer-events-none');
+      } else {
+        waInput.disabled = false;
+        waWrap.classList.remove('opacity-45', 'pointer-events-none');
+      }
+    }
+
+    function toggleEditProviderPresencialMode() {
+      const isPres = document.getElementById('edit-prov-is-presencial').checked;
+      const waWrap = document.getElementById('edit-prov-wa-wrapper');
+      const waInput = document.getElementById('edit-prov-wa');
+      waInput.required = false;
+      waInput.setCustomValidity('');
+      if (isPres) {
+        waInput.value = '';
+        waInput.disabled = true;
+        waWrap.classList.add('opacity-45', 'pointer-events-none');
+      } else {
+        waInput.disabled = false;
+        waWrap.classList.remove('opacity-45', 'pointer-events-none');
+      }
+    }
+
     async function addProvider(e) {
       e.preventDefault();
       const nombre = document.getElementById('prov-name').value.trim();
-      const waRaw = document.getElementById('prov-wa').value.replace(/\D/g, '');
-      const wa = waRaw || null;
+      const isPresencial = document.getElementById('prov-is-presencial').checked;
+      const waRaw = isPresencial ? '' : document.getElementById('prov-wa').value.replace(/\D/g, '');
+      const wa = isPresencial ? '' : (waRaw || '');
       const categoria = document.getElementById('prov-cat').value.trim();
 
-      const { error } = await db.from('proveedores').insert({
+      const { data: inserted, error } = await db.from('proveedores').insert({
         local_id: currentLocal.id,
         nombre,
         telefono_whatsapp: wa,
         categoria
-      });
+      }).select('id').single();
 
       if (error) {
         showToast('Error: ' + error.message);
         return;
       }
 
+      if (inserted?.id) {
+        setProviderPresencialLocal(inserted.id, isPresencial);
+        await db.from('proveedores').update({ es_compra_presencial: isPresencial }).eq('id', inserted.id);
+      }
+
       e.target.reset();
-      showToast('✓ Proveedor guardado');
-      await loadAllData();
+      toggleNewProviderPresencialMode();
+      showToast(isPresencial ? '✓ Punto de compra presencial guardado' : '✓ Proveedor guardado');
+      await loadAllData(false);
     }
 
     function renderProviders() {
@@ -1440,20 +2117,24 @@
       list.innerHTML = '';
 
       if (providers.length === 0) {
-        list.innerHTML = '<div class="sm:col-span-2 p-6 text-center theme-surface rounded-2xl border border-dashed text-xs theme-text-muted">Aún no agregas proveedores.</div>';
+        list.innerHTML = '<div class="sm:col-span-2 p-6 text-center theme-surface rounded-2xl border border-dashed text-xs theme-text-muted">Aún no agregas proveedores ni puntos de compra presencial.</div>';
         return;
       }
 
       providers.forEach(pr => {
         const assignedCount = products.filter(p => p.proveedor_id === pr.id).length;
-        const hasWa = Boolean(pr.telefono_whatsapp && String(pr.telefono_whatsapp).trim());
+        const presencial = isProviderPresencial(pr);
+        const hasWa = !presencial && Boolean(pr.telefono_whatsapp && String(pr.telefono_whatsapp).trim());
         const card = document.createElement('div');
         card.className = 'theme-surface border rounded-2xl p-4 flex items-center justify-between gap-2';
         card.innerHTML = `
           <div class="min-w-0">
-            <p class="font-display font-bold text-sm theme-text-main truncate">${pr.nombre}</p>
+            <div class="flex items-center gap-2">
+              <p class="font-display font-bold text-sm theme-text-main truncate">${pr.nombre}</p>
+              ${presencial ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full theme-primary-badge flex-shrink-0">🛍️ Presencial</span>' : ''}
+            </div>
             <p class="text-xs theme-text-muted truncate">
-              ${hasWa ? 'WhatsApp: +' + pr.telefono_whatsapp : 'Sin WhatsApp registrado'}
+              ${presencial ? 'Compra física en tienda (sin WhatsApp)' : (hasWa ? 'WhatsApp: +' + pr.telefono_whatsapp : 'Sin WhatsApp registrado')}
               ${pr.categoria ? ' • ' + pr.categoria : ''}
             </p>
             <p class="text-[11px] font-semibold theme-primary-text mt-0.5">${assignedCount} producto(s) asignado(s)</p>
@@ -1477,10 +2158,13 @@
       const prov = providers.find(pr => pr.id === providerId);
       if (!prov) return;
 
+      const presencial = isProviderPresencial(prov);
       document.getElementById('edit-prov-id').value = prov.id;
       document.getElementById('edit-prov-name').value = prov.nombre;
       document.getElementById('edit-prov-wa').value = prov.telefono_whatsapp || '';
       document.getElementById('edit-prov-cat').value = prov.categoria || '';
+      document.getElementById('edit-prov-is-presencial').checked = presencial;
+      toggleEditProviderPresencialMode();
       document.getElementById('edit-prov-prod-filter').value = '';
 
       editProviderSelectedProductIds = new Set(
@@ -1532,11 +2216,8 @@
     }
 
     function toggleProviderProductSelection(productId, isChecked) {
-      if (isChecked) {
-        editProviderSelectedProductIds.add(productId);
-      } else {
-        editProviderSelectedProductIds.delete(productId);
-      }
+      if (isChecked) editProviderSelectedProductIds.add(productId);
+      else editProviderSelectedProductIds.delete(productId);
       document.getElementById('edit-prov-selected-count').textContent = `${editProviderSelectedProductIds.size} seleccionado(s)`;
     }
 
@@ -1548,9 +2229,12 @@
       const wa = waRaw || null;
       const categoria = document.getElementById('edit-prov-cat').value.trim();
 
+      const isPresencial = document.getElementById('edit-prov-is-presencial').checked;
+      const finalWa = isPresencial ? '' : (wa || '');
+
       const { error: provErr } = await db
         .from('proveedores')
-        .update({ nombre, telefono_whatsapp: wa, categoria })
+        .update({ nombre, telefono_whatsapp: finalWa, categoria })
         .eq('id', provId);
 
       if (provErr) {
@@ -1558,45 +2242,30 @@
         return;
       }
 
-      const selectedIds = Array.from(editProviderSelectedProductIds);
-      const previouslyAssignedIds = products
-        .filter(p => p.proveedor_id === provId)
-        .map(p => p.id);
+      setProviderPresencialLocal(provId, isPresencial);
+      await db.from('proveedores').update({ es_compra_presencial: isPresencial }).eq('id', provId);
 
+      const selectedIds = Array.from(editProviderSelectedProductIds);
+      const previouslyAssignedIds = products.filter(p => p.proveedor_id === provId).map(p => p.id);
       const toUnassignIds = previouslyAssignedIds.filter(id => !editProviderSelectedProductIds.has(id));
 
       if (selectedIds.length > 0) {
-        const { error: assignErr } = await db
-          .from('productos')
-          .update({ proveedor_id: provId })
-          .in('id', selectedIds);
-        if (assignErr) {
-          showToast('Error al asignar productos: ' + assignErr.message);
-          return;
-        }
+        await db.from('productos').update({ proveedor_id: provId }).in('id', selectedIds);
       }
-
       if (toUnassignIds.length > 0) {
-        const { error: unassignErr } = await db
-          .from('productos')
-          .update({ proveedor_id: null })
-          .in('id', toUnassignIds);
-        if (unassignErr) {
-          showToast('Error al desasignar productos: ' + unassignErr.message);
-          return;
-        }
+        await db.from('productos').update({ proveedor_id: null }).in('id', toUnassignIds);
       }
 
       closeEditProviderModal();
       showToast('✓ Proveedor y productos actualizados');
-      await loadAllData();
+      await loadAllData(false);
     }
 
     async function deleteProvider() {
       const provId = document.getElementById('edit-prov-id').value;
       const prov = providers.find(pr => pr.id === provId);
       if (!prov) return;
-      if (!confirm(`¿Eliminar proveedor "${prov.nombre}"? Sus productos quedarán sin proveedor asignado.`)) return;
+      if (!confirm(`¿Eliminar proveedor "${prov.nombre}"?`)) return;
 
       await db.from('productos').update({ proveedor_id: null }).eq('proveedor_id', provId);
       const { error } = await db.from('proveedores').delete().eq('id', provId);
@@ -1607,26 +2276,49 @@
 
       closeEditProviderModal();
       showToast('Proveedor eliminado');
-      await loadAllData();
+      await loadAllData(false);
     }
 
     // =========================================================================
-    // PEDIDOS POR WHATSAPP + QR PARA CELULAR + EDICIÓN + ELIMINACIÓN
+    // PEDIDOS POR WHATSAPP (CON SOPORTE PARA PAQUETES Y %)
     // =========================================================================
-    function renderOrderProviderSelect() {
+    function renderOrderProviderSelect(preservedState = null) {
       const sel = document.getElementById('order-provider-select');
       const prev = sel.value;
       sel.innerHTML = providers.length === 0
         ? '<option value="">Agrega un proveedor primero</option>'
-        : providers.map(pr => `<option value="${pr.id}">${pr.nombre}</option>`).join('');
+        : providers.map(pr => `<option value="${pr.id}">${isProviderPresencial(pr) ? '🛍️ ' : ''}${pr.nombre}</option>`).join('');
       if (prev && providers.some(pr => pr.id === prev)) sel.value = prev;
-      renderOrderBuilder();
+      renderOrderBuilder(preservedState);
     }
 
-    function renderOrderBuilder() {
+    function renderOrderBuilder(preservedState = null) {
       const provId = document.getElementById('order-provider-select').value;
+      const prov = providers.find(pr => pr.id === provId);
+      const isPresencial = isProviderPresencial(prov);
+
       const box = document.getElementById('order-builder-items');
       const summary = document.getElementById('order-builder-summary');
+      const kickerEl = document.getElementById('order-builder-kicker');
+      const titleEl = document.getElementById('order-builder-title');
+      const subtitleEl = document.getElementById('order-builder-subtitle');
+      const qrBtn = document.getElementById('btn-order-qr-mobile');
+      const submitBtn = document.getElementById('btn-order-submit-main');
+
+      if (isPresencial) {
+        if (kickerEl) kickerEl.textContent = '🛍️ Lista de Compra Presencial';
+        if (titleEl) titleEl.textContent = `Armar Lista para Ir a Comprar (${prov.nombre})`;
+        if (subtitleEl) subtitleEl.textContent = 'Ingresa la cantidad de productos que saldrán a comprar. Se guardará en Pedidos Realizados como guía para el compañero que vaya a la tienda.';
+        if (qrBtn) qrBtn.classList.add('hidden');
+        if (submitBtn) submitBtn.textContent = '🛍️ Registrar Lista de Compra';
+      } else {
+        if (kickerEl) kickerEl.textContent = 'Reposición Inteligente';
+        if (titleEl) titleEl.textContent = 'Armar Pedido por WhatsApp';
+        if (subtitleEl) subtitleEl.textContent = 'Calcula automáticamente unidades sueltas, paquetes completos (ej. packs de 6) o reposición de envases al llegar al umbral %.';
+        if (qrBtn) qrBtn.classList.remove('hidden');
+        if (submitBtn) submitBtn.textContent = '📲 Guardar y Pedir aquí';
+      }
+
       box.innerHTML = '';
 
       if (!provId) {
@@ -1643,18 +2335,29 @@
 
       provProducts.forEach(p => {
         const isCrit = p.stock_actual <= p.stock_minimo;
-        const suggested = Math.max(1, p.stock_maximo - p.stock_actual);
+        const suggestion = computeSuggestedOrder(p);
+
+        const isChecked = preservedState
+          ? preservedState.savedCheckedIds.has(p.id)
+          : isCrit;
+        const qtyVal = (preservedState && preservedState.savedQuantities[p.id] !== undefined)
+          ? preservedState.savedQuantities[p.id]
+          : suggestion.qty;
+
         const row = document.createElement('div');
         row.className = 'p-3 rounded-xl theme-input border flex items-center justify-between gap-3';
         row.innerHTML = `
           <label class="flex items-center gap-3 min-w-0 cursor-pointer select-none">
-            <input type="checkbox" class="order-chk custom-chk" data-id="${p.id}" ${isCrit ? 'checked' : ''} onchange="updateOrderSummary()" />
+            <input type="checkbox" class="order-chk custom-chk" data-id="${p.id}" ${isChecked ? 'checked' : ''} onchange="updateOrderSummary()" />
             <div class="min-w-0">
               <p class="text-xs font-bold theme-text-main truncate">${p.nombre} ${isCrit ? '🔴' : ''}</p>
-              <p class="text-[11px] theme-text-muted">Actual: ${p.stock_actual} / Ideal: ${p.stock_maximo} ${p.unidad}</p>
+              <p class="text-[11px] theme-text-muted">${suggestion.hintText}</p>
             </div>
           </label>
-          <input type="number" min="1" value="${suggested}" class="order-qty w-16 px-2 py-1.5 theme-muted-btn border rounded-lg text-xs font-bold text-center" data-id="${p.id}" />
+          <div class="flex items-center gap-1.5 flex-shrink-0">
+            <input type="number" min="1" value="${qtyVal}" class="order-qty w-16 px-2 py-1.5 theme-muted-btn border rounded-lg font-bold text-center" data-id="${p.id}" />
+            <span class="text-[10px] font-bold theme-text-muted w-20 truncate">${suggestion.unitLabel}</span>
+          </div>
         `;
         box.appendChild(row);
       });
@@ -1674,7 +2377,25 @@
         const qtyInput = document.querySelector(`.order-qty[data-id="${prodId}"]`);
         const cantidad = parseInt(qtyInput ? qtyInput.value : '1', 10) || 1;
         if (prod) {
-          items.push({ producto_id: prod.id, nombre: prod.nombre, unidad: prod.unidad, cantidad });
+          const meta = getProductMeta(prod);
+          let unidadPedido = prod.unidad;
+          let unidadesReales = cantidad;
+
+          if (meta.isPercent) {
+            unidadPedido = 'reposición (100%)';
+            unidadesReales = 100;
+          } else if (meta.packEnabled) {
+            unidadPedido = cantidad === 1 ? `paquete (x${meta.packSize})` : `paquetes (x${meta.packSize})`;
+            unidadesReales = cantidad * meta.packSize;
+          }
+
+          items.push({
+            producto_id: prod.id,
+            nombre: prod.nombre,
+            unidad: unidadPedido,
+            cantidad,
+            unidades_reales: unidadesReales
+          });
         }
       });
       return items;
@@ -1684,7 +2405,7 @@
       const cleanPhone = String(prov?.telefono_whatsapp || '').replace(/\D/g, '');
       if (!cleanPhone) return null;
       const localName = localNombreOverride || currentLocal?.nombre || 'Tacita de Café';
-      const lines = items.map(i => `• ${i.cantidad} ${i.unidad}(s) de ${i.nombre}`).join('\n');
+      const lines = items.map(i => `• ${i.cantidad} ${i.unidad} de ${i.nombre}`).join('\n');
       const msg = encodeURIComponent(`Hola ${prov.nombre}, te escribimos de ${localName} para hacer el siguiente pedido:\n\n${lines}\n\n¡Muchas gracias!`);
       return `https://wa.me/${cleanPhone}?text=${msg}`;
     }
@@ -1700,6 +2421,8 @@
         return;
       }
 
+      const isPresencial = isProviderPresencial(prov);
+
       const { error } = await db.from('pedidos').insert({
         local_id: currentLocal.id,
         proveedor_id: prov.id,
@@ -1714,15 +2437,19 @@
         return;
       }
 
-      const waUrl = buildWhatsAppOrderUrl(prov, items);
-      if (waUrl) {
-        window.open(waUrl, '_blank');
-        showToast('✓ Pedido guardado y abierto en WhatsApp');
+      if (isPresencial) {
+        showToast(`✓ Lista de compra presencial guardada (${prov.nombre})`);
       } else {
-        showToast('✓ Pedido guardado (proveedor sin WhatsApp)');
+        const waUrl = buildWhatsAppOrderUrl(prov, items);
+        if (waUrl) {
+          window.open(waUrl, '_blank');
+          showToast('✓ Pedido guardado y abierto en WhatsApp');
+        } else {
+          showToast('✓ Pedido guardado (proveedor sin WhatsApp)');
+        }
       }
 
-      await loadAllData();
+      await loadAllData(false);
     }
 
     async function createOrderQRForMobile() {
@@ -1774,7 +2501,7 @@
 
     function closeQrOrderModal() {
       document.getElementById('qr-order-modal').classList.add('hidden');
-      loadAllData();
+      loadAllData(false);
     }
 
     async function initQrCheckoutFlow(orderId) {
@@ -1821,7 +2548,7 @@
 
       const itemsBox = document.getElementById('qr-checkout-items');
       itemsBox.innerHTML = (order.items || [])
-        .map(i => `<div class="flex justify-between gap-2"><span>• ${i.nombre}</span><strong>${i.cantidad} ${i.unidad}(s)</strong></div>`)
+        .map(i => `<div class="flex justify-between gap-2"><span>• ${i.nombre}</span><strong>${i.cantidad} ${i.unidad}</strong></div>`)
         .join('');
     }
 
@@ -1861,7 +2588,7 @@
       const cleanPhone = String(res.telefono_whatsapp || '').replace(/\D/g, '');
       if (cleanPhone) {
         const lines = (scannedQrOrder.items || [])
-          .map(i => `• ${i.cantidad} ${i.unidad}(s) de ${i.nombre}`)
+          .map(i => `• ${i.cantidad} ${i.unidad} de ${i.nombre}`)
           .join('\n');
         const msg = encodeURIComponent(
           `Hola ${res.proveedor_nombre}, te escribimos de ${res.local_nombre} para hacer el siguiente pedido:\n\n${lines}\n\n¡Muchas gracias!`
@@ -1874,7 +2601,6 @@
       }
     }
 
-    // Historial de pedidos, edición y eliminación
     function renderOrdersHistory() {
       const list = document.getElementById('orders-history-list');
       if (!list) return;
@@ -1887,22 +2613,24 @@
 
       orders.forEach(o => {
         const prov = providers.find(pr => pr.id === o.proveedor_id);
+        const presencial = isProviderPresencial(prov);
         const isPending = o.estado === 'pendiente';
-        const itemsText = (o.items || []).map(i => `${i.cantidad}x ${i.nombre}`).join(', ');
+        const itemsText = (o.items || []).map(i => `${i.cantidad}x ${i.nombre} (${i.unidad})`).join(', ');
         const dateLabel = new Date(o.created_at).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 
         const card = document.createElement('div');
         card.className = 'p-3.5 rounded-xl theme-input border flex flex-col sm:flex-row sm:items-center justify-between gap-3';
         card.innerHTML = `
           <div class="space-y-0.5 min-w-0">
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
               <span class="font-display font-bold text-xs theme-text-main">${prov ? prov.nombre : 'Proveedor'}</span>
+              ${presencial ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full theme-primary-badge">🛍️ Compra Presencial</span>' : ''}
               <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isPending ? 'bg-amber-700/20 text-amber-600' : 'bg-emerald-700/20 text-emerald-600'}">
-                ${isPending ? '⏳ Pendiente' : '✓ Recibido'}
+                ${isPending ? (presencial ? '🛒 Por comprar' : '⏳ Pendiente') : '✓ Comprado / Recibido'}
               </span>
             </div>
-            <p class="text-xs theme-text-main">${itemsText}</p>
-            <p class="text-[10px] theme-text-muted">Pedido por ${o.creado_por_nombre || 'Equipo'} (${dateLabel})${o.recibido_por_nombre ? ' • Recibido por ' + o.recibido_por_nombre : ''}</p>
+            <p class="text-xs theme-text-main font-medium">${itemsText}</p>
+            <p class="text-[10px] theme-text-muted">Creado por ${o.creado_por_nombre || 'Equipo'} (${dateLabel})${o.recibido_por_nombre ? ' • Ingresado por ' + o.recibido_por_nombre : ''}</p>
           </div>
           <div class="flex flex-wrap items-center gap-2 flex-shrink-0">
             ${isPending ? `
@@ -1926,16 +2654,9 @@
       const order = orders.find(o => o.id === orderId);
       if (!order) return;
 
-      const estadoTexto = order.estado === 'pendiente'
-        ? 'pendiente'
-        : 'ya recibido (no se descontará el stock ya sumado)';
-      if (!confirm(`¿Eliminar este pedido ${estadoTexto} del historial?`)) return;
+      if (!confirm('¿Eliminar este pedido del historial?')) return;
 
-      const { error } = await db
-        .from('pedidos')
-        .delete()
-        .eq('id', orderId);
-
+      const { error } = await db.from('pedidos').delete().eq('id', orderId);
       if (error) {
         showToast('Error al eliminar pedido: ' + error.message);
         return;
@@ -1948,13 +2669,9 @@
 
     async function clearAllOrders() {
       if (!isAdmin() || !currentLocal) return;
-      if (!confirm('¿Eliminar TODOS los pedidos realizados (pendientes y recibidos) de este local?')) return;
+      if (!confirm('¿Eliminar TODOS los pedidos realizados de este local?')) return;
 
-      const { error } = await db
-        .from('pedidos')
-        .delete()
-        .eq('local_id', currentLocal.id);
-
+      const { error } = await db.from('pedidos').delete().eq('local_id', currentLocal.id);
       if (error) {
         showToast('Error al vaciar pedidos: ' + error.message);
         return;
@@ -2004,8 +2721,8 @@
               <p class="text-[10px] theme-text-muted">Unidad: ${item.unidad}</p>
             </div>
             <div class="flex items-center gap-1.5 flex-shrink-0">
-              <input type="number" min="1" value="${item.cantidad}" onchange="updateEditedOrderItemQty(${idx}, this.value)" class="w-16 px-2 py-1 theme-muted-btn border rounded-lg text-xs font-bold text-center" />
-              <button type="button" onclick="removeEditedOrderItem(${idx})" class="w-7 h-7 rounded-lg bg-red-800/15 hover:bg-red-800/25 text-red-600 font-bold text-xs flex items-center justify-center" title="Quitar del pedido">✕</button>
+              <input type="number" min="1" value="${item.cantidad}" onchange="updateEditedOrderItemQty(${idx}, this.value)" class="w-16 px-2 py-1 theme-muted-btn border rounded-lg font-bold text-center" />
+              <button type="button" onclick="removeEditedOrderItem(${idx})" class="w-7 h-7 rounded-lg bg-red-800/15 hover:bg-red-800/25 text-red-600 font-bold text-xs flex items-center justify-center">✕</button>
             </div>
           `;
           container.appendChild(row);
@@ -2033,6 +2750,11 @@
       const qty = Math.max(1, parseInt(rawVal, 10) || 1);
       if (editingOrderItems[index]) {
         editingOrderItems[index].cantidad = qty;
+        const prod = products.find(p => p.id === editingOrderItems[index].producto_id);
+        if (prod) {
+          const meta = getProductMeta(prod);
+          editingOrderItems[index].unidades_reales = meta.isPercent ? 100 : (meta.packEnabled ? qty * meta.packSize : qty);
+        }
       }
     }
 
@@ -2046,12 +2768,14 @@
       const prod = products.find(p => p.id === prodId);
       if (!prod) return;
 
-      const suggested = Math.max(1, prod.stock_maximo - prod.stock_actual);
+      const sug = computeSuggestedOrder(prod);
+      const meta = getProductMeta(prod);
       editingOrderItems.push({
         producto_id: prod.id,
         nombre: prod.nombre,
-        unidad: prod.unidad,
-        cantidad: suggested
+        unidad: sug.unitLabel,
+        cantidad: sug.qty,
+        unidades_reales: meta.isPercent ? 100 : (meta.packEnabled ? sug.qty * meta.packSize : sug.qty)
       });
       renderEditOrderItems();
     }
@@ -2085,7 +2809,7 @@
         if (waUrl) window.open(waUrl, '_blank');
       }
 
-      await loadAllData();
+      await loadAllData(false);
     }
 
     async function deletePendingOrder() {
@@ -2100,21 +2824,48 @@
 
       closeEditOrderModal();
       showToast('Pedido anulado');
-      await loadAllData();
+      await loadAllData(false);
     }
 
+    // Marcar recibido soportando unidades, paquetes y reposición 100%
     async function markOrderReceived(orderId) {
+      const order = orders.find(o => o.id === orderId);
+      if (!order || order.estado !== 'pendiente') return;
+
+      // Preparar ítems con unidades_reales calculadas para productos por paquete o %
+      const normalizedItems = (order.items || []).map(item => {
+        const prod = products.find(p => p.id === item.producto_id);
+        if (!prod) return item;
+        const meta = getProductMeta(prod);
+
+        if (meta.isPercent) {
+          const toFill = Math.max(0, 100 - prod.stock_actual);
+          return { ...item, cantidad: toFill > 0 ? toFill : 100 };
+        }
+        if (meta.packEnabled) {
+          const totalUnits = item.unidades_reales || (item.cantidad * meta.packSize);
+          return { ...item, cantidad: totalUnits };
+        }
+        return item;
+      });
+
+      // Si algún ítem venía en paquetes o %, actualizamos temporalmente la cantidad real antes de llamar recibir_pedido
+      const needsNormalization = normalizedItems.some((it, idx) => it.cantidad !== order.items[idx]?.cantidad);
+      if (needsNormalization) {
+        await db.from('pedidos').update({ items: normalizedItems }).eq('id', orderId);
+      }
+
       const { error } = await db.rpc('recibir_pedido', { p_pedido_id: orderId });
       if (error) {
         showToast('Error: ' + error.message);
         return;
       }
       showToast('✓ Pedido recibido y stock sumado');
-      await loadAllData();
+      await loadAllData(false);
     }
 
     // =========================================================================
-    // BITÁCORA (ELIMINACIÓN INDIVIDUAL Y LIMPIEZA TOTAL SOLO ADMIN)
+    // BITÁCORA
     // =========================================================================
     function renderAuditLogs() {
       const list = document.getElementById('audit-log-list');
@@ -2130,8 +2881,11 @@
       auditLogs.forEach(log => {
         const matchedProd = products.find(p => p.id === log.producto_id);
         const prodName = matchedProd ? matchedProd.nombre : (log.producto_nombre || 'Producto');
+        const isPct = matchedProd ? getProductMeta(matchedProd).isPercent : false;
         const isPlus = log.delta > 0;
         const timeStr = new Date(log.created_at).toLocaleString('es-CL', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+        const deltaLabel = isPlus ? `+${log.delta}${isPct ? '%' : ''}` : `${log.delta}${isPct ? '%' : ''}`;
+        const afterLabel = `${log.stock_despues}${isPct ? '%' : ''}`;
 
         const row = document.createElement('div');
         row.className = 'p-2.5 rounded-xl theme-input border flex items-center justify-between gap-2 text-xs';
@@ -2139,9 +2893,9 @@
           <div class="min-w-0">
             <span class="font-bold theme-text-main">${log.usuario_nombre || 'Equipo'}</span>
             <span class="theme-text-muted"> ${isPlus ? 'sumó' : 'descontó'} </span>
-            <span class="font-extrabold ${isPlus ? 'text-emerald-600' : 'text-red-600'}">${isPlus ? '+' + log.delta : log.delta}</span>
+            <span class="font-extrabold ${isPlus ? 'text-emerald-600' : 'text-red-600'}">${deltaLabel}</span>
             <span class="theme-text-main"> en ${prodName}</span>
-            <span class="theme-text-muted"> (quedó en ${log.stock_despues})</span>
+            <span class="theme-text-muted"> (quedó en ${afterLabel})</span>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
             <span class="text-[10px] theme-text-muted">${timeStr}</span>
@@ -2158,11 +2912,7 @@
 
     async function deleteSingleAuditLog(logId) {
       if (!isAdmin()) return;
-      const { error } = await db
-        .from('movimientos_stock')
-        .delete()
-        .eq('id', logId);
-
+      const { error } = await db.from('movimientos_stock').delete().eq('id', logId);
       if (error) {
         showToast('Error al eliminar registro: ' + error.message);
         return;
@@ -2177,11 +2927,7 @@
       if (!isAdmin() || !currentLocal) return;
       if (!confirm('¿Vaciar todo el historial de movimientos de la bitácora? Esta acción no se puede deshacer.')) return;
 
-      const { error } = await db
-        .from('movimientos_stock')
-        .delete()
-        .eq('local_id', currentLocal.id);
-
+      const { error } = await db.from('movimientos_stock').delete().eq('local_id', currentLocal.id);
       if (error) {
         showToast('Error al limpiar bitácora: ' + error.message);
         return;
@@ -2193,7 +2939,259 @@
     }
 
     // =========================================================================
-    // GESTIÓN DE EQUIPO (CREACIÓN DIRECTA DE USUARIOS + PIN 4 DÍGITOS)
+    // RESUMEN SEMANAL (LUNES A SÁBADO 10:00 AM CHILE + CORTE INTERMEDIO)
+    // =========================================================================
+    function getChileNow() {
+      const str = new Date().toLocaleString('en-US', { timeZone: 'America/Santiago' });
+      return new Date(str);
+    }
+
+    function getMondayOfCurrentWeekChile(chileNow) {
+      const day = chileNow.getDay(); // 0=Dom, 1=Lun, ..., 6=Sab
+      const diffToMonday = day === 0 ? -6 : (1 - day);
+      const monday = new Date(chileNow);
+      monday.setDate(chileNow.getDate() + diffToMonday);
+      monday.setHours(0, 0, 0, 0);
+
+      // Excepción única: semana del lunes 16 de noviembre de 2026 comienza el martes 17
+      if (monday.getFullYear() === 2026 && monday.getMonth() === 10 && monday.getDate() === 16) {
+        monday.setDate(17);
+      }
+      return monday;
+    }
+
+    function checkSaturdayOfficialWindow() {
+      const chileNow = getChileNow();
+      const banner = document.getElementById('saturday-official-banner');
+      if (!banner) return;
+      // Si es sábado desde las 10:00 AM en adelante en Chile
+      if (chileNow.getDay() === 6 && chileNow.getHours() >= 10) {
+        banner.classList.remove('hidden');
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+
+    async function generateWeeklySummary(showNotification = false) {
+      if (!currentLocal) return;
+
+      const chileNow = getChileNow();
+      const mondayStart = getMondayOfCurrentWeekChile(chileNow);
+
+      // Si es sábado >= 10:00 AM Chile, el corte oficial cierra el sábado a las 10:00 AM; si no, hasta el instante actual
+      let periodEnd = new Date(chileNow);
+      let isOfficialSaturdayCut = false;
+      if (chileNow.getDay() === 6 && chileNow.getHours() >= 10) {
+        periodEnd = new Date(chileNow);
+        periodEnd.setHours(10, 0, 0, 0);
+        isOfficialSaturdayCut = true;
+      }
+
+      const startIso = mondayStart.toISOString();
+      const endIso = periodEnd.toISOString();
+
+      // Consultar movimientos y pedidos completos de la semana desde Supabase
+      const [movRes, pedRes] = await Promise.all([
+        db.from('movimientos_stock')
+          .select('*')
+          .eq('local_id', currentLocal.id)
+          .gte('created_at', startIso)
+          .lte('created_at', endIso)
+          .order('created_at', { ascending: false }),
+        db.from('pedidos')
+          .select('*')
+          .eq('local_id', currentLocal.id)
+          .neq('estado', 'borrador_qr')
+          .gte('created_at', startIso)
+          .lte('created_at', endIso)
+      ]);
+
+      const weekMovs = movRes.data || [];
+      const weekOrders = pedRes.data || [];
+
+      // 1. Stocks usados (consumos delta < 0) y stocks repuestos (delta > 0)
+      const usedByProd = {};
+      const restockedByProd = {};
+      let totalUsedUnits = 0;
+      let totalRestockedUnits = 0;
+
+      weekMovs.forEach(m => {
+        const prod = products.find(p => p.id === m.producto_id);
+        const name = prod ? prod.nombre : (m.producto_nombre || 'Producto');
+        const isPct = prod ? getProductMeta(prod).isPercent : false;
+        const unitStr = isPct ? '%' : (prod?.unidad || 'unid.');
+
+        if (m.delta < 0) {
+          const absVal = Math.abs(m.delta);
+          if (!usedByProd[name]) usedByProd[name] = { name, total: 0, events: 0, unit: unitStr };
+          usedByProd[name].total += absVal;
+          usedByProd[name].events += 1;
+          if (!isPct) totalUsedUnits += absVal;
+        } else if (m.delta > 0) {
+          if (!restockedByProd[name]) restockedByProd[name] = { name, total: 0, events: 0, unit: unitStr };
+          restockedByProd[name].total += m.delta;
+          restockedByProd[name].events += 1;
+          if (!isPct) totalRestockedUnits += m.delta;
+        }
+      });
+
+      // 2. Productos repuestos en MÁS DE 1 ocasión (vía pedidos recibidos o ingresos de stock)
+      const restockFrequency = {};
+      weekOrders.filter(o => o.estado === 'recibido').forEach(o => {
+        (o.items || []).forEach(it => {
+          const k = it.nombre;
+          if (!restockFrequency[k]) restockFrequency[k] = { name: k, times: 0, totalQty: 0 };
+          restockFrequency[k].times += 1;
+          restockFrequency[k].totalQty += Number(it.cantidad) || 0;
+        });
+      });
+
+      // Complementar con ingresos múltiples en bitácora si no pasaron por orden
+      Object.values(restockedByProd).forEach(r => {
+        if (!restockFrequency[r.name]) {
+          restockFrequency[r.name] = { name: r.name, times: r.events, totalQty: r.total };
+        } else {
+          restockFrequency[r.name].times = Math.max(restockFrequency[r.name].times, r.events);
+        }
+      });
+
+      const repeatedRestocks = Object.values(restockFrequency)
+        .filter(x => x.times > 1)
+        .sort((a, b) => b.times - a.times);
+
+      const usedList = Object.values(usedByProd).sort((a, b) => b.total - a.total);
+      const restockedList = Object.values(restockedByProd).sort((a, b) => b.total - a.total);
+
+      const fmtDate = (d) => d.toLocaleString('es-CL', {
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      const out = document.getElementById('weekly-summary-output');
+      out.innerHTML = `
+        <div class="theme-surface border rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b theme-border">
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full theme-primary-badge">
+                ${isOfficialSaturdayCut ? '✅ Cierre Oficial Sábado 10:00 AM' : '⏱️ Corte Parcial en Curso (No corta la semana)'}
+              </span>
+              <p class="text-xs font-bold theme-text-main mt-1.5">
+                Período: ${fmtDate(mondayStart)} → ${fmtDate(periodEnd)}
+              </p>
+            </div>
+            <button type="button" onclick="copyWeeklySummaryToClipboard()" class="px-3 py-1.5 rounded-xl theme-muted-btn border text-xs font-bold hover:opacity-85 transition">
+              📋 Copiar Texto
+            </button>
+          </div>
+
+          <!-- KPIs principales -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div class="p-3 rounded-xl theme-input border">
+              <p class="text-[10px] font-bold uppercase theme-text-muted">Pedidos Realizados</p>
+              <p class="font-display text-xl font-extrabold theme-primary-text mt-0.5">${weekOrders.length}</p>
+              <p class="text-[10px] theme-text-muted">${weekOrders.filter(o => o.estado === 'recibido').length} recibido(s)</p>
+            </div>
+            <div class="p-3 rounded-xl theme-input border">
+              <p class="text-[10px] font-bold uppercase theme-text-muted">Stock Usado</p>
+              <p class="font-display text-xl font-extrabold text-red-600 mt-0.5">${totalUsedUnits}</p>
+              <p class="text-[10px] theme-text-muted">${usedList.length} insumo(s) distintos</p>
+            </div>
+            <div class="p-3 rounded-xl theme-input border">
+              <p class="text-[10px] font-bold uppercase theme-text-muted">Stock Repuesto</p>
+              <p class="font-display text-xl font-extrabold text-emerald-600 mt-0.5">${totalRestockedUnits}</p>
+              <p class="text-[10px] theme-text-muted">${restockedList.length} insumo(s) distintos</p>
+            </div>
+            <div class="p-3 rounded-xl theme-input border">
+              <p class="text-[10px] font-bold uppercase theme-text-muted">Repuestos > 1 Vez</p>
+              <p class="font-display text-xl font-extrabold theme-text-main mt-0.5">${repeatedRestocks.length}</p>
+              <p class="text-[10px] theme-text-muted">Alta rotación semanal</p>
+            </div>
+          </div>
+
+          <!-- Productos repuestos en más de 1 ocasión -->
+          <div class="space-y-2">
+            <h3 class="font-display text-xs font-extrabold uppercase tracking-wider theme-primary-text">
+              🔁 Productos Repuestos en Más de 1 Ocasión
+            </h3>
+            ${repeatedRestocks.length === 0
+              ? '<p class="text-xs theme-text-muted p-3 rounded-xl theme-input border">Ningún producto ha requerido más de 1 reposición en este rango.</p>'
+              : `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  ${repeatedRestocks.map(r => `
+                    <div class="p-2.5 rounded-xl theme-input border flex items-center justify-between text-xs">
+                      <span class="font-bold theme-text-main truncate">${r.name}</span>
+                      <span class="font-extrabold px-2 py-0.5 rounded-lg theme-primary-badge flex-shrink-0">${r.times} veces</span>
+                    </div>
+                  `).join('')}
+                </div>`
+            }
+          </div>
+
+          <!-- Detalle Usado vs Repuesto -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+            <div class="space-y-2">
+              <h3 class="font-display text-xs font-extrabold uppercase tracking-wider text-red-600">
+                📉 Detalle Stock Usado (Consumo)
+              </h3>
+              <div class="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+                ${usedList.length === 0
+                  ? '<p class="text-xs theme-text-muted">Sin consumos registrados esta semana.</p>'
+                  : usedList.map(u => `
+                    <div class="p-2 rounded-xl theme-input border flex items-center justify-between text-xs">
+                      <span class="theme-text-main font-semibold truncate">${u.name}</span>
+                      <span class="font-extrabold text-red-600 flex-shrink-0">−${u.total} ${u.unit}</span>
+                    </div>
+                  `).join('')
+                }
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <h3 class="font-display text-xs font-extrabold uppercase tracking-wider text-emerald-600">
+                📈 Detalle Stock Repuesto (Ingresos)
+              </h3>
+              <div class="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+                ${restockedList.length === 0
+                  ? '<p class="text-xs theme-text-muted">Sin reposiciones registradas esta semana.</p>'
+                  : restockedList.map(r => `
+                    <div class="p-2 rounded-xl theme-input border flex items-center justify-between text-xs">
+                      <span class="theme-text-main font-semibold truncate">${r.name}</span>
+                      <span class="font-extrabold text-emerald-600 flex-shrink-0">+${r.total} ${r.unit}</span>
+                    </div>
+                  `).join('')
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      window._lastWeeklySummaryText = [
+        `📊 RESUMEN SEMANAL - ${currentLocal.nombre}`,
+        `Período: ${fmtDate(mondayStart)} al ${fmtDate(periodEnd)}`,
+        `• Pedidos realizados: ${weekOrders.length} (${weekOrders.filter(o => o.estado === 'recibido').length} recibidos)`,
+        `• Stock usado total: ${totalUsedUnits} unidades`,
+        `• Stock repuesto total: ${totalRestockedUnits} unidades`,
+        `• Productos repuestos >1 vez: ${repeatedRestocks.length > 0 ? repeatedRestocks.map(r => `${r.name} (${r.times}x)`).join(', ') : 'Ninguno'}`,
+        `\n📉 Usado:\n${usedList.map(u => `- ${u.name}: ${u.total} ${u.unit}`).join('\n') || '- Sin datos'}`,
+        `\n📈 Repuesto:\n${restockedList.map(r => `- ${r.name}: ${r.total} ${r.unit}`).join('\n') || '- Sin datos'}`
+      ].join('\n');
+
+      if (showNotification) {
+        showToast('✓ Resumen semanal generado');
+      }
+    }
+
+    function copyWeeklySummaryToClipboard() {
+      if (!window._lastWeeklySummaryText) return;
+      navigator.clipboard?.writeText(window._lastWeeklySummaryText);
+      showToast('✓ Resumen copiado al portapapeles');
+    }
+
+    // =========================================================================
+    // GESTIÓN DE EQUIPO (DENTRO DE CONFIGURACIÓN)
     // =========================================================================
     async function loadTeamMembers() {
       if (!isAdmin() || !currentLocal) return;
@@ -2246,10 +3244,10 @@
               placeholder="PIN"
               onchange="updateMemberPin('${m.id}', this.value)"
               title="PIN de 4 dígitos para firmar pedidos por QR"
-              class="w-16 px-2 py-1.5 theme-muted-btn border rounded-lg text-xs font-mono font-bold text-center outline-none"
+              class="w-16 px-2 py-1.5 theme-muted-btn border rounded-lg font-mono font-bold text-center outline-none"
             />
 
-            <select onchange="updateMemberRole('${m.id}', this.value)" ${isSelf ? 'disabled' : ''} class="px-2.5 py-1.5 theme-muted-btn border rounded-lg text-xs font-bold disabled:opacity-60">
+            <select onchange="updateMemberRole('${m.id}', this.value)" ${isSelf ? 'disabled' : ''} class="px-2.5 py-1.5 theme-muted-btn border rounded-lg font-bold disabled:opacity-60">
               <option value="empleado" ${m.rol === 'empleado' ? 'selected' : ''}>Empleado</option>
               <option value="admin" ${m.rol === 'admin' ? 'selected' : ''}>Admin</option>
             </select>
@@ -2314,6 +3312,7 @@
       }
 
       e.target.reset();
+      document.getElementById('team-add-details').open = false;
       showToast(`✓ ${nombreMostrar} agregado al equipo`);
       await loadTeamMembers();
     }
@@ -2346,6 +3345,7 @@
       }
 
       e.target.reset();
+      document.getElementById('team-add-details').open = false;
       showToast(`✓ ${nombreMostrar} vinculado`);
       await loadTeamMembers();
     }
